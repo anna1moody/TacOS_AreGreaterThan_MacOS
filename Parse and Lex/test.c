@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include "test.h"
 
 int yylex();
 extern char* yytext;

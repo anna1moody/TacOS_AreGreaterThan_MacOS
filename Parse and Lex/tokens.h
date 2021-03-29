@@ -6,6 +6,7 @@ enum token_type {
 	NULL_LITERAL,
 	BOOLEAN_LITERAL,
 	UNDEFINED,
+	SEMICOLON,
 
 	META
 };
