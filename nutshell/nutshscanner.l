@@ -41,7 +41,9 @@ setenv			    { return SETENV; }
 printenv	            { return PRINTENV; }
 unsetenv		    { return UNSETENV; }
 cd		            { return CD;}
+"~"                 {return TILDE;}
 alias		            { return ALIAS; }
+unalias             {return UNALIAS;}
 "\n"		            { return END; }
 [\"]                 { BEGIN(string_condition); }
 {CHAR}+              {if(ifAlias(yytext)) {

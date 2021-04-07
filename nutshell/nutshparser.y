@@ -14,13 +14,16 @@ int runSetEnv(char *var, char *word);
 int runPrintEnv(void);
 int runUnsetEnv(char *var);
 int runCD(char* arg);
+int runCDn(void);
 int runSetAlias(char *name, char *word);
+int runPrintAlias();
+int runRemoveAlias(char *name);
 %}
 
 %union {char *string;}
 
 %start cmd_line
-%token <string> BYE SETENV PRINTENV UNSETENV CD STRING ALIAS END
+%token <string> BYE SETENV PRINTENV UNSETENV CD STRING ALIAS END TILDE UNALIAS
 
 %%
 cmd_line    :
@@ -28,8 +31,12 @@ cmd_line    :
 	| SETENV STRING STRING END		{runSetEnv($2, $3); return 1;}
 	| PRINTENV END				{runPrintEnv(); return 1;}
 	| UNSETENV STRING END			{runUnsetEnv($2); return 1;}
+	| CD END					{runCDn(); return 1;}
+	| CD TILDE END				{runCDn(); return 1;}
 	| CD STRING END				{runCD($2); return 1;}
 	| ALIAS STRING STRING END		{runSetAlias($2, $3); return 1;}
+	| ALIAS END				{runPrintAlias(); return 1;}
+	| UNALIAS STRING END	{runRemoveAlias($2); return 1;}
 
 %%
 
@@ -76,6 +83,7 @@ int runUnsetEnv(char *var) {
 }
 
 int runCD(char* arg) {
+
 	if (arg[0] != '/') { // arg is relative path
 		strcat(varTable.word[0], "/");
 		strcat(varTable.word[0], arg);
@@ -102,6 +110,16 @@ int runCD(char* arg) {
 	}
 }
 
+int runCDn() {
+	if (chdir(varTable.word[1]) == 0){
+	    getcwd(cwd, sizeof(cwd));
+        strcpy(varTable.word[0], cwd);
+		return 1;
+	}
+	printf("there was an error\n");
+	return 1;
+}
+
 int runSetAlias(char *name, char *word) {
 	for (int i = 0; i < aliasIndex; i++) {
 		if(strcmp(name, word) == 0){
@@ -121,5 +139,24 @@ int runSetAlias(char *name, char *word) {
 	strcpy(aliasTable.word[aliasIndex], word);
 	aliasIndex++;
 
+	return 1;
+}
+
+int runPrintAlias() {
+	printf("in print alias\n");
+	for (int i = 0; i < aliasIndex; i++) {
+		if(strcmp(aliasTable.name[i], "") == 0) {
+			return 1;
+		} else {
+			printf("%s=%s\n", aliasTable.name[i], aliasTable.word[i]);
+			return 1;
+		}
+	}
+	printf("There are no available aliases\n");
+	return 1;
+}
+
+int runRemoveAlias(char *name) {
+	printf("in remove alias\n");
 	return 1;
 }
