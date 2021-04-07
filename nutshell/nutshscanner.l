@@ -22,10 +22,21 @@ bool ifAlias(char* name){
     }
     return false;
 }
+
+bool isVar(char *var){
+    for (int i = 0; i < varIndex; i++){
+        if(strcmp(varTable.var[i], var) == 0){
+            return true;
+        }
+    }
+    return false;
+}
+
 %}
 %array
 %option noyywrap
 %x string_condition
+%x var_exp_condition
 
 CHAR            [.A-Za-z0-9!\/_-][.A-Za-z0-9!\/_-]*
 ANYCHAR            [)(*&%$#@!`;,\.a-zA-Z0-9'/*_=~ -][)(*&%$#@!`;,\.a-zA-Z0-9'/*_=~ -]*
@@ -42,19 +53,24 @@ printenv	            { return PRINTENV; }
 unsetenv		    { return UNSETENV; }
 cd		            { return CD;}
 "~"                 {return TILDE;}
-alias		            { return ALIAS; }
-unalias             {return UNALIAS;}
+"unalias"             {return UNALIAS;}
+"alias"		            { return ALIAS; }
 "\n"		            { return END; }
 [\"]                 { BEGIN(string_condition); }
 {CHAR}+              {if(ifAlias(yytext)) {
-                        printf("yytext: %s\n", yytext);
+                        printf("is alias: yytext: %s\n", yytext);
                         //source: https://www.cs.princeton.edu/~appel/modern/c/software/flex/flex.html
                            char *yycopy = strdup( subAliases(yytext) );
-                           for ( int i = strlen(subAliases(yytext)) - 1; i >= 0; --i )
+                           for ( int i = strlen(subAliases(yytext)) - 1; i >= 0; --i ){
                                unput( yycopy[i] );
+                               }
                            free( yycopy );
                     } else {
-                        printf("yytext: %s\n", yytext);
+                        if(isVar(yytext)){
+                            printf("found a var: %s\n", yytext);
+                            yylval.string = strdup(yytext);
+                        }
+                        printf("not alias: yytext: %s\n", yytext);
                         yylval.string = strdup(yytext);
                         return STRING;
                     };

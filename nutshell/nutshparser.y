@@ -18,12 +18,13 @@ int runCDn(void);
 int runSetAlias(char *name, char *word);
 int runPrintAlias();
 int runRemoveAlias(char *name);
+int runValExpansion(char *n);
 %}
 
 %union {char *string;}
 
 %start cmd_line
-%token <string> BYE SETENV PRINTENV UNSETENV CD STRING ALIAS END TILDE UNALIAS
+%token <string> BYE SETENV PRINTENV UNSETENV CD STRING ALIAS END TILDE UNALIAS VALEXP
 
 %%
 cmd_line    :
@@ -37,6 +38,7 @@ cmd_line    :
 	| ALIAS STRING STRING END		{runSetAlias($2, $3); return 1;}
 	| ALIAS END				{runPrintAlias(); return 1;}
 	| UNALIAS STRING END	{runRemoveAlias($2); return 1;}
+	| VALEXP			{printf("second part, %s\n", $1);runValExpansion($1); return 1;}
 
 %%
 
@@ -46,16 +48,26 @@ int yyerror(char *s) {
   }
 
 int runSetEnv(char *var, char *word) {
-	for (int i = 0; i < sizeof(varTable.var); i++) {
-		if(strcmp(varTable.var[i], "") == 0) {
-			printf("No %s variable exists.\n", var);
+	for (int i = 0; i < varIndex; i++) {
+		if(strcmp(var, word) == 0){
+			printf("Error, the variable:%s and word %s equal each other.\n", var, word);
 			return 1;
-		} else if (strcmp(varTable.var[i], var) == 0) {
+		}
+		else if((strcmp(varTable.var[i], var) == 0) && (strcmp(varTable.word[i], word) == 0)){
+			printf("Error, the variable: %s and its corresponding word: %s already exist.\n", var, word);
+			return 1;
+		}
+		else if(strcmp(varTable.var[i], var) == 0) {
 			strcpy(varTable.word[i], word);
 			return 1;
-                }
+		}
 	}
+	strcpy(varTable.var[varIndex], var);
+	strcpy(varTable.word[varIndex], word);
+	varIndex++;
+
 	return 1;
+	
 }
 
 int runPrintEnv() {
@@ -143,20 +155,47 @@ int runSetAlias(char *name, char *word) {
 }
 
 int runPrintAlias() {
-	printf("in print alias\n");
 	for (int i = 0; i < aliasIndex; i++) {
 		if(strcmp(aliasTable.name[i], "") == 0) {
 			return 1;
 		} else {
 			printf("%s=%s\n", aliasTable.name[i], aliasTable.word[i]);
-			return 1;
 		}
 	}
-	printf("There are no available aliases\n");
+	if (aliasIndex == 0) {
+		printf("There are no available aliases\n");
+	}
 	return 1;
 }
 
 int runRemoveAlias(char *name) {
-	printf("in remove alias\n");
+	if(aliasIndex == 0){
+		printf("Error, the alias table is empty\n");
+		return 1;
+	}
+	bool found = false;
+	for (int i = 0; i < aliasIndex; i++) {
+		if(strcmp(aliasTable.name[i], name) == 0) {
+			strcpy(aliasTable.name[i], aliasTable.name[aliasIndex-1]);
+			if(ifAlias(aliasTable.word[i])){
+				runRemoveAlias(aliasTable.word[i]);
+			}
+			strcpy(aliasTable.word[i], aliasTable.word[aliasIndex-1]);
+			strcpy(aliasTable.name[aliasIndex-1], aliasTable.name[aliasIndex]);
+			strcpy(aliasTable.word[aliasIndex-1], aliasTable.word[aliasIndex]);
+			aliasIndex--;
+			found = true;
+		}
+	}
+	if (!found){
+		printf("Error, alias with the name %s is not in the alias table\n", name);
+	}
+	
 	return 1;
+}
+
+int runValExpansion(char *n){
+		printf("this is a valExpansion of: %s\n", n);
+		return 1;
+
 }

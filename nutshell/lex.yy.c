@@ -362,14 +362,14 @@ struct yy_trans_info
 	flex_int32_t yy_verify;
 	flex_int32_t yy_nxt;
 	};
-static const flex_int16_t yy_accept[54] =
+static const flex_int16_t yy_accept[56] =
     {   0,
-        0,    0,    0,    0,   16,   15,   12,    3,   14,   13,
-       14,   14,   14,   14,   14,   14,    9,    1,    2,   14,
-       14,   14,    8,   14,   14,   14,    1,   14,    4,   14,
-       14,   14,   14,   14,   14,   14,   14,   14,   10,   14,
-       14,   14,   14,   14,    5,   14,   14,   14,   11,   14,
-        6,    7,    0
+        0,    0,    0,    0,    0,    0,   16,   15,   12,    3,
+       14,   13,   14,   14,   14,   14,   14,   14,    9,    1,
+        2,   14,   14,   14,    8,   14,   14,   14,    1,   14,
+        4,   14,   14,   14,   14,   14,   14,   14,   14,   14,
+       11,   14,   14,   14,   14,   14,    5,   14,   14,   14,
+       10,   14,    6,    7,    0
     } ;
 
 static const YY_CHAR yy_ec[256] =
@@ -411,50 +411,54 @@ static const YY_CHAR yy_meta[23] =
         3,    2
     } ;
 
-static const flex_int16_t yy_base[57] =
+static const flex_int16_t yy_base[60] =
     {   0,
-        0,    0,   22,   24,   66,   67,   67,   67,    0,   67,
-       52,   43,   53,   46,   50,   46,   67,    0,   67,    0,
-       47,   47,    0,   45,   38,   21,    0,   48,    0,   40,
-       42,   39,   40,   33,   31,   34,   35,   28,    0,   34,
-       24,   30,   25,   21,    0,   17,   19,   12,    0,   11,
-        0,    0,   67,   38,   27,   40
+        0,    0,   22,   24,    0,    0,   69,   70,   70,   70,
+        0,   70,   55,   46,   56,   49,   53,   49,   70,    0,
+       70,    0,   50,   50,    0,   48,   41,   21,    0,   51,
+        0,   43,   45,   42,   43,   36,   34,   37,   38,   31,
+        0,   37,   27,   30,   25,   21,    0,   17,   19,   12,
+        0,   11,    0,    0,   70,   38,   41,   27,   43
     } ;
 
-static const flex_int16_t yy_def[57] =
+static const flex_int16_t yy_def[60] =
     {   0,
-       53,    1,   54,   54,   53,   53,   53,   53,   55,   53,
-       55,   55,   55,   55,   55,   55,   53,   56,   53,   55,
-       55,   55,   55,   55,   55,   55,   56,   55,   55,   55,
+       55,    1,   56,   56,   57,   57,   55,   55,   55,   55,
+       58,   55,   58,   58,   58,   58,   58,   58,   55,   59,
+       55,   58,   58,   58,   58,   58,   58,   58,   59,   58,
+       58,   58,   58,   58,   58,   58,   58,   58,   58,   58,
+       58,   58,   58,   58,   58,   58,   58,   58,   58,   58,
+       58,   58,   58,   58,    0,   55,   55,   55,   55
+    } ;
+
+static const flex_int16_t yy_nxt[93] =
+    {   0,
+        8,    9,   10,   11,   12,    8,   13,   14,   15,   11,
+       11,   11,   11,   11,   16,   11,   17,   11,   18,   11,
+       11,   19,    8,    8,    8,    8,   21,   34,   21,   22,
+       54,   53,   52,   51,   50,   49,   48,   35,   20,   20,
+       20,    8,    8,    8,   29,   29,   47,   46,   45,   44,
+       43,   42,   41,   40,   39,   38,   37,   36,   33,   32,
+       31,   30,   28,   27,   26,   25,   24,   23,   55,    7,
        55,   55,   55,   55,   55,   55,   55,   55,   55,   55,
        55,   55,   55,   55,   55,   55,   55,   55,   55,   55,
-       55,   55,    0,   53,   53,   53
+       55,   55
+
     } ;
 
-static const flex_int16_t yy_nxt[90] =
-    {   0,
-        6,    7,    8,    9,   10,    6,   11,   12,   13,    9,
-        9,    9,    9,    9,   14,    9,   15,    9,   16,    9,
-        9,   17,    6,    6,    6,    6,   19,   32,   19,   20,
-       52,   51,   50,   49,   48,   47,   46,   33,   18,   18,
-       18,   27,   27,   45,   44,   43,   42,   41,   40,   39,
-       38,   37,   36,   35,   34,   31,   30,   29,   28,   26,
-       25,   24,   23,   22,   21,   53,    5,   53,   53,   53,
-       53,   53,   53,   53,   53,   53,   53,   53,   53,   53,
-       53,   53,   53,   53,   53,   53,   53,   53,   53
-    } ;
-
-static const flex_int16_t yy_chk[90] =
+static const flex_int16_t yy_chk[93] =
     {   0,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    3,    3,    4,    4,    3,   26,    4,   55,
-       50,   48,   47,   46,   44,   43,   42,   26,   54,   54,
-       54,   56,   56,   41,   40,   38,   37,   36,   35,   34,
-       33,   32,   31,   30,   28,   25,   24,   22,   21,   16,
-       15,   14,   13,   12,   11,    5,   53,   53,   53,   53,
-       53,   53,   53,   53,   53,   53,   53,   53,   53,   53,
-       53,   53,   53,   53,   53,   53,   53,   53,   53
+        1,    1,    3,    3,    4,    4,    3,   28,    4,   58,
+       52,   50,   49,   48,   46,   45,   44,   28,   56,   56,
+       56,   57,   57,   57,   59,   59,   43,   42,   40,   39,
+       38,   37,   36,   35,   34,   33,   32,   30,   27,   26,
+       24,   23,   18,   17,   16,   15,   14,   13,    7,   55,
+       55,   55,   55,   55,   55,   55,   55,   55,   55,   55,
+       55,   55,   55,   55,   55,   55,   55,   55,   55,   55,
+       55,   55
+
     } ;
 
 static yy_state_type yy_last_accepting_state;
@@ -501,12 +505,23 @@ bool ifAlias(char* name){
     }
     return false;
 }
-#line 505 "lex.yy.c"
 
-#line 507 "lex.yy.c"
+bool isVar(char *var){
+    for (int i = 0; i < varIndex; i++){
+        if(strcmp(varTable.var[i], var) == 0){
+            return true;
+        }
+    }
+    return false;
+}
+
+#line 519 "lex.yy.c"
+
+#line 521 "lex.yy.c"
 
 #define INITIAL 0
 #define string_condition 1
+#define var_exp_condition 2
 
 #ifndef YY_NO_UNISTD_H
 /* Special case for "unistd.h", since it is non-ANSI. We include it way
@@ -721,10 +736,10 @@ YY_DECL
 		}
 
 	{
-#line 33 "nutshscanner.l"
+#line 44 "nutshscanner.l"
 
 
-#line 728 "lex.yy.c"
+#line 743 "lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -751,13 +766,13 @@ yy_match:
 			while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 				{
 				yy_current_state = (int) yy_def[yy_current_state];
-				if ( yy_current_state >= 54 )
+				if ( yy_current_state >= 56 )
 					yy_c = yy_meta[yy_c];
 				}
 			yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
 			++yy_cp;
 			}
-		while ( yy_base[yy_current_state] != 67 );
+		while ( yy_base[yy_current_state] != 70 );
 
 yy_find_action:
 		yy_act = yy_accept[yy_current_state];
@@ -783,82 +798,87 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 35 "nutshscanner.l"
+#line 46 "nutshscanner.l"
 { yylval.string = strdup(yytext); return STRING;}
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 36 "nutshscanner.l"
+#line 47 "nutshscanner.l"
 {BEGIN(INITIAL);}
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 38 "nutshscanner.l"
+#line 49 "nutshscanner.l"
 { }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 39 "nutshscanner.l"
+#line 50 "nutshscanner.l"
 { return BYE; }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 40 "nutshscanner.l"
+#line 51 "nutshscanner.l"
 { return SETENV; }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 41 "nutshscanner.l"
+#line 52 "nutshscanner.l"
 { return PRINTENV; }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 42 "nutshscanner.l"
+#line 53 "nutshscanner.l"
 { return UNSETENV; }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 43 "nutshscanner.l"
+#line 54 "nutshscanner.l"
 { return CD;}
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 44 "nutshscanner.l"
+#line 55 "nutshscanner.l"
 {return TILDE;}
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 45 "nutshscanner.l"
-{ return ALIAS; }
+#line 56 "nutshscanner.l"
+{return UNALIAS;}
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 46 "nutshscanner.l"
-{return UNALIAS;}
+#line 57 "nutshscanner.l"
+{ return ALIAS; }
 	YY_BREAK
 case 12:
 /* rule 12 can match eol */
 YY_RULE_SETUP
-#line 47 "nutshscanner.l"
+#line 58 "nutshscanner.l"
 { return END; }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 48 "nutshscanner.l"
+#line 59 "nutshscanner.l"
 { BEGIN(string_condition); }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 49 "nutshscanner.l"
+#line 60 "nutshscanner.l"
 {if(ifAlias(yytext)) {
-                        printf("yytext: %s\n", yytext);
+                        printf("is alias: yytext: %s\n", yytext);
                         //source: https://www.cs.princeton.edu/~appel/modern/c/software/flex/flex.html
                            char *yycopy = strdup( subAliases(yytext) );
-                           for ( int i = strlen(subAliases(yytext)) - 1; i >= 0; --i )
+                           for ( int i = strlen(subAliases(yytext)) - 1; i >= 0; --i ){
                                unput( yycopy[i] );
+                               }
                            free( yycopy );
                     } else {
-                        printf("yytext: %s\n", yytext);
+                        if(isVar(yytext)){
+                            printf("found a var: %s\n", yytext);
+                            yylval.string = strdup(yytext);
+                        }
+                        printf("not alias: yytext: %s\n", yytext);
                         yylval.string = strdup(yytext);
                         return STRING;
                     };
@@ -866,12 +886,13 @@ YY_RULE_SETUP
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 62 "nutshscanner.l"
+#line 78 "nutshscanner.l"
 ECHO;
 	YY_BREAK
-#line 873 "lex.yy.c"
+#line 893 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(string_condition):
+case YY_STATE_EOF(var_exp_condition):
 	yyterminate();
 
 	case YY_END_OF_BUFFER:
@@ -1167,7 +1188,7 @@ static int yy_get_next_buffer (void)
 		while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 			{
 			yy_current_state = (int) yy_def[yy_current_state];
-			if ( yy_current_state >= 54 )
+			if ( yy_current_state >= 56 )
 				yy_c = yy_meta[yy_c];
 			}
 		yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
@@ -1195,11 +1216,11 @@ static int yy_get_next_buffer (void)
 	while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 		{
 		yy_current_state = (int) yy_def[yy_current_state];
-		if ( yy_current_state >= 54 )
+		if ( yy_current_state >= 56 )
 			yy_c = yy_meta[yy_c];
 		}
 	yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
-	yy_is_jam = (yy_current_state == 53);
+	yy_is_jam = (yy_current_state == 55);
 
 		return yy_is_jam ? 0 : yy_current_state;
 }
@@ -1875,6 +1896,6 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 62 "nutshscanner.l"
+#line 78 "nutshscanner.l"
 
 
