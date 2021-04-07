@@ -1318,7 +1318,7 @@ yyreduce:
 
   case 9:
 #line 33 "parser.y"
-             { printf("goodbye ya sexy coder girl ;D \n"); exit(0);}
+             { printf("Goodbye friend\n"); exit(0);}
 #line 1323 "parser.tab.c"
     break;
 
