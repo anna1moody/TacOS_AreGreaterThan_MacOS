@@ -20,7 +20,7 @@ int runSetAlias(char *name, char *word);
 %union {char *string;}
 
 %start cmd_line
-%token <string> BYE SETENV PRINTENV UNSETENV CD STRING ALIAS END
+%token <string> BYE SETENV PRINTENV UNSETENV CD STRING ALIAS END 
 
 %%
 cmd_line    :
