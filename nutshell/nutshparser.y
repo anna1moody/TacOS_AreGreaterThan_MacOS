@@ -38,7 +38,7 @@ cmd_line    :
 	| ALIAS STRING STRING END		{runSetAlias($2, $3); return 1;}
 	| ALIAS END				{runPrintAlias(); return 1;}
 	| UNALIAS STRING END	{runRemoveAlias($2); return 1;}
-	| VALEXP			{printf("second part, %s\n", $1);runValExpansion($1); return 1;}
+	| VALEXP END			{printf("second part, %s\n", $1);runValExpansion($1); return 1;}
 
 %%
 

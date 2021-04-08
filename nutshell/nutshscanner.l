@@ -40,10 +40,26 @@ bool isVar(char *var){
 
 CHAR            [.A-Za-z0-9!\/_-][.A-Za-z0-9!\/_-]*
 ANYCHAR            [)(*&%$#@!`;,\.a-zA-Z0-9'/*_=~ -][)(*&%$#@!`;,\.a-zA-Z0-9'/*_=~ -]*
+VARSTART        (\$\{)
 
 %%
+<var_exp_condition>{ANYCHAR}+     {  printf("var expansion: %s\n", yytext); yylval.string = strdup(yytext); 
+                                     for (int i = 0; i < varIndex; i++){
+                                        if (strcmp(varTable.var[i], yytext) == 0){
+                                            yylval.string = strdup(varTable.word[i]);
+                                            printf("yylval.string %s\n", yylval.string);
+                                        }
+                                     }
+                                     return STRING;}
+<var_exp_condition>[}]          {BEGIN(INITIAL);}
 
-<string_condition>{ANYCHAR}+     { yylval.string = strdup(yytext); return STRING;}
+<string_condition>{ANYCHAR}+    { yylval.string = strdup(yytext); return STRING;}
+<string_condition>{VARSTART}        {printf("found var\n"); 
+                                    BEGIN(var_exp_condition);
+                                    printf("string %s\n", yylval.string);
+                                     return STRING;
+                                     printf("string %s\n", yylval.string);}
+<string_condition>[}]          {BEGIN(INITIAL);}
 <string_condition>[\"]          {BEGIN(INITIAL);}
 
 [ ]		            { }
@@ -56,6 +72,7 @@ cd		            { return CD;}
 "unalias"             {return UNALIAS;}
 "alias"		            { return ALIAS; }
 "\n"		            { return END; }
+"${"               {BEGIN(var_exp_condition);}
 [\"]                 { BEGIN(string_condition); }
 {CHAR}+              {if(ifAlias(yytext)) {
                         printf("is alias: yytext: %s\n", yytext);
@@ -66,10 +83,7 @@ cd		            { return CD;}
                                }
                            free( yycopy );
                     } else {
-                        if(isVar(yytext)){
-                            printf("found a var: %s\n", yytext);
-                            yylval.string = strdup(yytext);
-                        }
+  
                         printf("not alias: yytext: %s\n", yytext);
                         yylval.string = strdup(yytext);
                         return STRING;
