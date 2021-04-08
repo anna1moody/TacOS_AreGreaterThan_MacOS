@@ -55,7 +55,7 @@ VARSTART        (\$\{)
                                      if (!found){
                                         printf("Error, the inputted ${%s} is not an environment variable\n", yylval.string);}
                                      else{ return STRING;}}
-<var_exp_condition>[}]          {BEGIN(INITIAL);}
+<var_exp_condition>[}]          {BEGIN(INITIAL);} 
 
 <var_in_string>{ANYCHAR}+       {    bool found = false;
                                      for (int i = 0; i < varIndex; i++){
