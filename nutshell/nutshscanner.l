@@ -37,30 +37,42 @@ bool isVar(char *var){
 %option noyywrap
 %x string_condition
 %x var_exp_condition
+%x var_in_string
 
 CHAR            [.A-Za-z0-9!\/_-][.A-Za-z0-9!\/_-]*
 ANYCHAR            [)(*&%$#@!`;,\.a-zA-Z0-9'/*_=~ -][)(*&%$#@!`;,\.a-zA-Z0-9'/*_=~ -]*
 VARSTART        (\$\{)
 
 %%
-<var_exp_condition>{ANYCHAR}+     {  printf("var expansion: %s\n", yytext); yylval.string = strdup(yytext); 
+<var_exp_condition>{ANYCHAR}+     {  yylval.string = strdup(yytext); 
+                                     bool found = false;
                                      for (int i = 0; i < varIndex; i++){
                                         if (strcmp(varTable.var[i], yytext) == 0){
                                             yylval.string = strdup(varTable.word[i]);
-                                            printf("yylval.string %s\n", yylval.string);
+                                            found = true;
                                         }
                                      }
-                                     return STRING;}
+                                     if (!found){
+                                        printf("Error, the inputted ${%s} is not an environment variable\n", yylval.string);}
+                                     else{ return STRING;}}
 <var_exp_condition>[}]          {BEGIN(INITIAL);}
 
+<var_in_string>{ANYCHAR}+       {    bool found = false;
+                                     for (int i = 0; i < varIndex; i++){
+                                        if (strcmp(varTable.var[i], yytext) == 0){
+                                            yylval.string = strdup(varTable.word[i]);
+                                            found = true;
+                                        }
+                                     }
+                                     if (!found){
+                                        printf("Error, the inputted ${%s} is not an environment variable\n", yylval.string);}
+                                     else{ return STRING;}}
+<var_in_string>[}]              {BEGIN(string_condition);}
+
 <string_condition>{ANYCHAR}+    { yylval.string = strdup(yytext); return STRING;}
-<string_condition>{VARSTART}        {printf("found var\n"); 
-                                    BEGIN(var_exp_condition);
-                                    printf("string %s\n", yylval.string);
-                                     return STRING;
-                                     printf("string %s\n", yylval.string);}
-<string_condition>[}]          {BEGIN(INITIAL);}
-<string_condition>[\"]          {BEGIN(INITIAL);}
+<string_condition>"${"        { BEGIN(var_in_string);}
+<string_condition>[}]          { BEGIN(string_condition);}
+<string_condition>[\"]          { BEGIN(INITIAL);}
 
 [ ]		            { }
 bye                         { return BYE; }

@@ -32,3 +32,11 @@ null							return NULL_LITERAL;
 .		{return UNDEFINED;}
 
 %%
+
+<string_condition>{VARSTART}        {printf("found var\n"); 
+                                    BEGIN(var_exp_condition);
+                                    yylval.string = strdup(yytext);
+                                    printf("string %s\n", yylval.string);
+                                     return STRING;
+                                     printf("string %s\n", yylval.string);}
+<string_condition>[}]          {printf("finish } \n"); BEGIN(INITIAL);}
