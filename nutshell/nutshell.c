@@ -14,9 +14,11 @@ int main()
 {
     aliasIndex = 0;
     varIndex = 0;
+    bcIndex = 0;
 
     getcwd(cwd, sizeof(cwd));
 
+    // Environment Variable Table
     strcpy(varTable.var[varIndex], "PWD"); // print working directory; path of the working directory
     strcpy(varTable.word[varIndex], cwd);
     varIndex++;
@@ -29,6 +31,14 @@ int main()
     strcpy(varTable.var[varIndex], "PATH"); // list of paths to be searched to find a command's executable file
     strcpy(varTable.word[varIndex], ".:/bin"); // starts at .:/bin
     varIndex++;
+
+    // Basic Command Table
+    strcpy(commandTable.command[bcIndex], "");
+    strcpy(commandTable.comArgs[bcIndex], "");
+    strcpy(commandTable.temp[bcIndex], "");
+    strcpy(commandTable.input[bcIndex], "");
+    strcpy(commandTable.output[bcIndex], "");
+    bcIndex++;
 
     system("clear");
     while(1)

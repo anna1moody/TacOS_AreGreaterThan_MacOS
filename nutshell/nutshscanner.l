@@ -79,10 +79,20 @@ bye                         { return BYE; }
 setenv			    { return SETENV; }
 printenv	            { return PRINTENV; }
 unsetenv		    { return UNSETENV; }
-cd		            { return CD;}
-"~"                 {return TILDE;}
-"unalias"             {return UNALIAS;}
+cd		            { return CD; }
+"~"                         { return TILDE; }
+"unalias"             	    { return UNALIAS; }
 "alias"		            { return ALIAS; }
+ls                          { yylval.string = strdup(yytext); return BASIC; }
+pwd                         { yylval.string = strdup(yytext); return BASIC; }
+sort                        { yylval.string = strdup(yytext); return BASIC; }
+page                        { yylval.string = strdup(yytext); return BASIC; }
+nm                          { yylval.string = strdup(yytext); return BASIC; }
+cat                         { yylval.string = strdup(yytext); return BASIC; }
+cp                          { yylval.string = strdup(yytext); return BASIC; }
+mv                          { yylval.string = strdup(yytext); return BASIC; }
+ping                        { yylval.string = strdup(yytext); return BASIC; }
+echo                        { yylval.string = strdup(yytext); return BASIC; }
 "\n"		            { return END; }
 "${"               {BEGIN(var_exp_condition);}
 [\"]                 { BEGIN(string_condition); }
