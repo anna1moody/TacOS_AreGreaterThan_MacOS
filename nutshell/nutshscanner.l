@@ -41,7 +41,6 @@ bool isVar(char *var){
 %x string_condition
 %x var_exp_condition
 %x var_in_string
-%x alias_shit
 
 CHAR            [.A-Za-z0-9!\/_-][.A-Za-z0-9!\/_-]*
 ANYCHAR            [)(*&%$#@!`;,\.a-zA-Z0-9'/*_=~ -][)(*&%$#@!`;,\.a-zA-Z0-9'/*_=~ -]*
@@ -78,35 +77,28 @@ WHITESPACE      [\t ]+
 <string_condition>"${"        { BEGIN(var_in_string);}
 <string_condition>[}]          { BEGIN(string_condition);}
 <string_condition>[\"]          { BEGIN(INITIAL);}
-<alias_shit>{CHAR}*             {if(ifAlias(yytext)) {
-                        printf("is alias: yytext: %s\n", yytext);
-                        //source: https://www.cs.princeton.edu/~appel/modern/c/software/flex/flex.html
-                           char *yycopy = strdup( subAliases(yytext) );
-                           printf("yy copy: %s\n", yycopy);
-                           for ( int i = strlen(subAliases(yytext)) - 1; i >= 0; --i ){
-                               unput( yycopy[i] );
-                               }
-                           free( yycopy );
-                    } else {
-  
-                        printf("uh not alias: yytext: %s\n", yytext);
-                        for(int i = strlen(yytext)-1; i>=0; --i){
-                            unput(yytext[i]);
-                            }
-                    }
-                    return ALIAS;}
 
 [ ]		            { }
 bye                         { return BYE; }
 setenv			    { return SETENV; }
 printenv	            { return PRINTENV; }
 unsetenv		    { return UNSETENV; }
+cd		            { return CD; }
+"~"                         { return TILDE; }
+"unalias"             	    { return UNALIAS; }
+"alias"		            { return ALIAS; }
+ls                          { yylval.string = strdup(yytext); return BASIC; }
+pwd                         { yylval.string = strdup(yytext); return BASIC; }
+sort                        { yylval.string = strdup(yytext); return BASIC; }
+page                        { yylval.string = strdup(yytext); return BASIC; }
+nm                          { yylval.string = strdup(yytext); return BASIC; }
+cat                         { yylval.string = strdup(yytext); return BASIC; }
+cp                          { yylval.string = strdup(yytext); return BASIC; }
+mv                          { yylval.string = strdup(yytext); return BASIC; }
+ping                        { yylval.string = strdup(yytext); return BASIC; }
+echo                        { yylval.string = strdup(yytext); return BASIC; }
 WHITESPACE          {}
 
-cd		            { return CD;}
-"~"                 {return TILDE;}
-"alias"		            {return ALIAS; }
-"unalias"             {return UNALIAS;}
 "\n"		            { return END; }
 "${"               {BEGIN(var_exp_condition);}
 [\"]                 { BEGIN(string_condition); }

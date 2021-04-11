@@ -27,10 +27,12 @@ int main()
 {
     aliasIndex = 0;
     varIndex = 0;
+    bcIndex = 0;
     nodeIndex = 0;
 
     getcwd(cwd, sizeof(cwd));
 
+    // Environment Variable Table
     strcpy(varTable.var[varIndex], "PWD"); // print working directory; path of the working directory
     strcpy(varTable.word[varIndex], cwd);
     varIndex++;
@@ -44,6 +46,14 @@ int main()
     strcpy(varTable.word[varIndex], ".:/bin"); // starts at .:/bin
     varIndex++;
     struct Graph* graph = createGraph(128);
+
+    // Basic Command Table
+    strcpy(commandTable.command[bcIndex], "");
+    strcpy(commandTable.comArgs[bcIndex], "");
+    strcpy(commandTable.temp[bcIndex], "");
+    strcpy(commandTable.input[bcIndex], "");
+    strcpy(commandTable.output[bcIndex], "");
+    bcIndex++;
 
     system("clear");
     while(1)
