@@ -9,7 +9,6 @@
 #include <sys/wait.h>
 #include <string.h>
 #include <stddef.h>
-#include "global.h"
 #include "graph.c"
 
 void resetPATH();
