@@ -75,7 +75,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include "global.h"
+#include "graph.c"
 
 int yylex(void);
 int yyerror(char *s);
@@ -1728,28 +1728,80 @@ int runCDn() {
 }
 
 int runSetAlias(char *name, char *word) {
-	for (int i = 0; i < aliasIndex; i++) {
-		if(strcmp(name, word) == 0){
-			printf("Error, expansion of \"%s\" would create a loop.\n", name);
-			return 1;
+	if (strcmp(name, word) == 0){
+		printf("Error, expansion of name:\"%s\"  and word:\"%s\" would create a loop.\n", name, word);
+		return 1;
+	}
+	struct node* n1;
+	struct node* n2;
+	bool createdName = false;
+	bool createdWord = false;
+	//printf("nodeIndex %d graph size: %d\n", nodeIndex, graph->vertices);
+	int i;
+	for (i = 0; i < nodeIndex; i++){
+		//printf("start of node: alias index: %d of %d\n", i, aliasIndex);
+		//printf("node index: %d\n", nodeIndex);
+		struct node* n = graph->array[i];
+
+			if (strcmp(name, n->info->value) == 0){
+				//printf("createdName: %s = %s\n", n->info->value, name);
+				n1 = n;
+				createdName = true;
+			}
+			if (strcmp(word, n->info->value) == 0){
+				//printf("createdWord: %s = %s\n", n->info->value, word);
+				n2 = n;
+				createdWord = true;
+			}
+		
+	}
+		if(!createdName){
+			n1 = newNode(graph, nodeIndex, name);
 		}
-		else if((strcmp(aliasTable.name[i], name) == 0) && (strcmp(aliasTable.word[i], word) == 0)){
+		if(!createdWord){
+			n2 = newNode(graph, nodeIndex, word);
+		}
+		addEdge(graph, n1, n2);
+	
+	
+	//printf("nodeIndex %d\n", nodeIndex);
+	//printGraph(graph);
+	//printf(" n: %s  w: %s\n", name, word);
+	if (isCyclic(graph)){
+		printf("Error, expansion of name:\"%s\"  and word:\"%s\" would create a loop.\n", name, word);
+		deleteEdge(graph, n1, n2);
+		return 1;
+	}
+	/*if (strcmp(name, word) == 0) {
+			printf("Error, expansion of name:\"%s\"  and word:\"%s\" would create a loop.\n", name, word);
+			return 1;
+	}
+
+	for (int i = 0; i < aliasIndex; i++) {
+		if((strcmp(aliasTable.name[i], word) == 0) && (strcmp(aliasTable.word[i], name) == 0)){
 			printf("Error, expansion of \"%s\" would create a loop.\n", name);
 			return 1;
 		}
 		else if(strcmp(aliasTable.name[i], name) == 0) {
+			printf("%s %s %s %s\n", aliasTable.name[i], name, aliasTable.word[i], word);
 			strcpy(aliasTable.word[i], word);
 			return 1;
 		}
-	}
+	}*/
+			
+	
+		
+	
+	printf(" %s %s\n",  name, word);
+
 	strcpy(aliasTable.name[aliasIndex], name);
 	strcpy(aliasTable.word[aliasIndex], word);
 	aliasIndex++;
-
 	return 1;
 }
 
 int runPrintAlias() {
+	
 	for (int i = 0; i < aliasIndex; i++) {
 		if(strcmp(aliasTable.name[i], "") == 0) {
 			return 1;
@@ -1772,9 +1824,6 @@ int runRemoveAlias(char *name) {
 	for (int i = 0; i < aliasIndex; i++) {
 		if(strcmp(aliasTable.name[i], name) == 0) {
 			strcpy(aliasTable.name[i], aliasTable.name[aliasIndex-1]);
-			if(ifAlias(aliasTable.word[i])){
-				runRemoveAlias(aliasTable.word[i]);
-			}
 			strcpy(aliasTable.word[i], aliasTable.word[aliasIndex-1]);
 			strcpy(aliasTable.name[aliasIndex-1], aliasTable.name[aliasIndex]);
 			strcpy(aliasTable.word[aliasIndex-1], aliasTable.word[aliasIndex]);

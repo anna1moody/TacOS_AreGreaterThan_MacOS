@@ -10,10 +10,24 @@
 char *getcwd(char *buf, size_t size);
 int yyparse();
 
+struct Graph* createGraph(int vertices)
+{
+    graph = (struct Graph*) malloc(sizeof(struct Graph));
+    graph->vertices = vertices;
+    graph->array = malloc(vertices * sizeof(struct node));
+
+    int i;
+    for (i = 0; i < vertices; ++i)
+        graph->array[i] = NULL;
+
+    return graph;
+}
+
 int main()
 {
     aliasIndex = 0;
     varIndex = 0;
+    nodeIndex = 0;
 
     getcwd(cwd, sizeof(cwd));
 
@@ -29,6 +43,7 @@ int main()
     strcpy(varTable.var[varIndex], "PATH"); // list of paths to be searched to find a command's executable file
     strcpy(varTable.word[varIndex], ".:/bin"); // starts at .:/bin
     varIndex++;
+    struct Graph* graph = createGraph(128);
 
     system("clear");
     while(1)

@@ -17,6 +17,26 @@ struct evTable varTable;
 
 struct aTable aliasTable;
 
-int aliasIndex, varIndex;
+int aliasIndex, varIndex, nodeIndex;
 
 char* subAliases(char* name);
+
+struct Graph
+{
+    int vertices;
+    struct node** array;
+};
+
+struct pair {
+    int vertex;
+    char* value;
+};
+
+struct node
+{
+    struct pair* info;
+    struct node* next;
+
+};
+
+struct Graph* graph;
