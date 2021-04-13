@@ -45,8 +45,8 @@ bool isVar(char *var){
 %x var_in_string
 
 CHAR            [.A-Za-z0-9?*!<>:\/_-][.A-Z?*a-z0-9!<>:\/_-]*
-ANYCHAR            [)(*&%$#@!`;,\.a-zA-Z0-9<>:'/*_=~ -][)(*&%$#@!`;,\.a-zA-Z0-9<>:'/*_=~ -]*
-META            [|\"&]+
+ANYCHAR         [)(*&%$#@!`;,\.a-zA-Z0-9<>:'/*_=~ -][)(*&%$#@!`;,\.a-zA-Z0-9<>:'/*_=~ -]*
+META            [|\"]+
 WHITESPACE      [\t ]+
 QUEST           [?]
 
@@ -89,28 +89,8 @@ printenv	            { return PRINTENV; }
 unsetenv		    { return UNSETENV; }
 cd		            { return CD; }
 "~"                         { return TILDE; }
-"unalias"             	    { return UNALIAS; }
+"unalias"                   { return UNALIAS; }
 "alias"		            { return ALIAS; }
-ls                          { yylval.string = strdup(yytext); return BASIC; }
-pwd                         { yylval.string = strdup(yytext); return BASIC; }
-sort                        { yylval.string = strdup(yytext); return BASIC; }
-page                        { yylval.string = strdup(yytext); return BASIC; }
-nm                          { yylval.string = strdup(yytext); return BASIC; }
-cat                         { yylval.string = strdup(yytext); return BASIC; }
-cp                          { yylval.string = strdup(yytext); return BASIC; }
-mv                          { yylval.string = strdup(yytext); return BASIC; }
-ping                        { yylval.string = strdup(yytext); return BASIC; }
-echo                        { yylval.string = strdup(yytext); return BASIC; }
-ssh                         { yylval.string = strdup(yytext); return BASIC; }
-date                        { yylval.string = strdup(yytext); return BASIC; }
-touch                       { yylval.string = strdup(yytext); return BASIC; }
-rm                          { yylval.string = strdup(yytext); return BASIC; }
-tty                         { yylval.string = strdup(yytext); return BASIC; }
-mkdir                       { yylval.string = strdup(yytext); return BASIC; }
-rmdir                       { yylval.string = strdup(yytext); return BASIC; }
-wc                          { yylval.string = strdup(yytext); return BASIC; }
-grep                        { yylval.string = strdup(yytext); return BASIC; }
-users			    { yylval.string = strdup(yytext); return BASIC; }
 
 "<"                         { yylval.string = strdup(yytext); return INPUT; }
 ">"                         { yylval.string = strdup(yytext); return OUTPUT; }

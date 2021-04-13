@@ -13,6 +13,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdbool.h>
+#include <errno.h>
 #include "graph.c"
 
 void resetPATH();
@@ -52,7 +53,8 @@ void stderr_stdout();
 %start cmd_line
 %token <string> BYE SETENV PRINTENV UNSETENV CD STRING ALIAS END TILDE UNALIAS VALEXP BASIC AND INPUT OUTPUT DOUBLE STDERR STDERRSTDOUT
 
-%nterm <string> basic
+//%nterm <string> basic
+%nterm <string> command
 %nterm <string> args
 %nterm <string> meta
 %nterm <string> err
@@ -70,12 +72,17 @@ cmd_line    :
 	| ALIAS STRING STRING END		{runSetAlias($2, $3); return 1;}
 	| ALIAS END				{runPrintAlias(); return 1;}
 	| UNALIAS STRING END			{runRemoveAlias($2); return 1;}
-	| basic args                            {addArguments("null"); fixArguments(); runBasic($1); return 1;}
+	| command args                          {addArguments("null"); fixArguments(); runBasic($1); return 1;}
 	;
-
+/*
 basic:
         BASIC                                   {$$ = $1; fixComTable($1); addArguments($1);}
         ;
+*/
+
+command:
+	STRING					{$$ = $1; fixComTable($1); addArguments($1);}
+	;
 
 args:
         STRING args                             {$$ = $1; addArguments($1); fixIO($1);}
@@ -137,45 +144,43 @@ void fixComTable(char *name) {
 }
 
 void addArguments(char *arg) {
-		int pCount = 0;
+	int pCount = 0;
 
         if(strcmp(arg, "null") == 0) {
                 strcpy(commandTable.comArgs[argCount], "NULL");
-				argCount++;
-
+		argCount++;
         } else if(inputCounter > 0 || outputCounter > 0) {
-			//Skip adding argument
-		} else {
-				if (strchr(arg, '?') != NULL || strchr(arg, '*') != NULL) {
-					pCount = argCount;
-					char temp[100];
-					DIR *d;
-					struct dirent *dir;
-					d = opendir(".");
-					if (d){
-						while ((dir = readdir(d)) != NULL){
-							if (wildCardHelper(dir->d_name, arg)){
-								strcpy(commandTable.comArgs[argCount], dir->d_name);
-								argCount++;
-							}
-						}
-						for(int i=pCount;i<=argCount;i++) {
-							for(int j=i+1;j<=argCount-1;j++) {
-								if(strcmp(commandTable.comArgs[i],commandTable.comArgs[j]) < 0) {
-									strcpy(temp,commandTable.comArgs[i]);
-									strcpy(commandTable.comArgs[i],commandTable.comArgs[j]);
-									strcpy(commandTable.comArgs[j],temp);
-								 }
-							}
+		//Skip adding argument if input or output
+	} else {
+		if (strchr(arg, '?') != NULL || strchr(arg, '*') != NULL) {
+			pCount = argCount;
+			char temp[100];
+			DIR *d;
+			struct dirent *dir;
+			d = opendir(".");
+			if (d){
+				while ((dir = readdir(d)) != NULL){
+					if (wildCardHelper(dir->d_name, arg)){
+						strcpy(commandTable.comArgs[argCount], dir->d_name);
+						argCount++;
+					}
+				}
+				for(int i=pCount;i<=argCount;i++) {
+					for(int j=i+1;j<=argCount-1;j++) {
+						if(strcmp(commandTable.comArgs[i],commandTable.comArgs[j]) < 0) {
+							strcpy(temp,commandTable.comArgs[i]);
+							strcpy(commandTable.comArgs[i],commandTable.comArgs[j]);
+							strcpy(commandTable.comArgs[j],temp);
 						}
 					}
-                    pattern = true;
-                }
-                else {
-					pattern = false;
-					strcpy(commandTable.comArgs[argCount], arg);
-					argCount++;
 				}
+			}
+			pattern = true;
+                } else {
+			pattern = false;
+			strcpy(commandTable.comArgs[argCount], arg);
+			argCount++;
+		}
         }
 		
 }
@@ -263,7 +268,7 @@ void getPATHS(char** paths) {
 int yyerror(char *s) {
   printf("%s\n",s);
   return 0;
-  }
+}
 
 int runSetEnv(char *var, char *word) {
 	for (int i = 0; i < varIndex; i++) {
@@ -459,7 +464,7 @@ int runBasic(char *name) {
         getPATHS(paths);
 
 
-		/*
+	/*
 	printf("Paths:\n");
         for(int i = 0; paths[i] != NULL; i++) {
                 printf("%s\n", paths[i]);
@@ -505,6 +510,10 @@ int runBasic(char *name) {
 		printf("%s\n", commandTable.output[i]);
 	}
 
+	int errvalue;
+	int sizePaths = sizeof paths / sizeof paths[0];
+	bool didRun;
+	bool runCount[sizePaths];	
 
         pid_t pid = fork();
         if (pid < 0) {
@@ -541,18 +550,38 @@ int runBasic(char *name) {
 
 		for(int i = 0; paths[i] != NULL; i++) {
                         execv(paths[i], arg_list);
+			errvalue = errno;
+			runCount[i] = errvalue;
                 }
         }
+	
+	if (!runInBackground){
+		runInBackground = false;
+		wait(NULL);
+	}
 
-		if (!runInBackground){
-			runInBackground = false;
-			wait(NULL);
+	//Error testing
+	//for(int i = 0; sizePaths; i++) {
+	//	printf("%d\n", runCount[i]);
+	//}
+	
+	for(int i = 0; i < sizePaths; i++) {
+		if(runCount[i] == 0) {
+	                didRun = true;
+                } else {
+			errvalue = runCount[i];
 		}
+        }
+        if(!didRun) {
+                printf("The error generated was %d\n", errvalue);
+                printf("That means: %s\n", strerror(errvalue));
+		yylex();
+        }
 
         free(paths);
         resetPATH();
         resetArguments();
         argCount = 0;
-		runInBackground = false;
+	runInBackground = false;
         return 1;
 }
