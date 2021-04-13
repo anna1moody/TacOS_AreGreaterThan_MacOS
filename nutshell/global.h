@@ -18,6 +18,7 @@ struct bcTable {
         char temp[128][100];
         char input[128][100];
         char output[128][100];
+        char patternArgs[128][100];
 };
 
 char cwd[PATH_MAX];
@@ -28,7 +29,7 @@ struct aTable aliasTable;
 
 int aliasIndex, varIndex, nodeIndex, bcIndex;
 struct bcTable commandTable;
-
+bool runInBackground, aliasExp, pattern;
 
 char* subAliases(char* name);
 

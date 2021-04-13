@@ -1,0 +1,4 @@
+int main(){
+	printf("test executable\n");
+	return 1;
+}

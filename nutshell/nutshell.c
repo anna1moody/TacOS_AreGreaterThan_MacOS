@@ -29,6 +29,9 @@ int main()
     varIndex = 0;
     bcIndex = 0;
     nodeIndex = 0;
+    runInBackground = false;
+    aliasExp = false;
+    pattern = false;
 
     getcwd(cwd, sizeof(cwd));
 

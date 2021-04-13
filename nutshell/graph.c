@@ -49,7 +49,7 @@ void printGraph(struct Graph* graph)
     }
 }
 void deleteEdge(struct Graph* graph, struct node* n1, struct node* n2) {
-    printGraph(graph);
+    //printGraph(graph);
     graph->array[n1->info->vertex]->next = NULL;
     bool found = false;
     for (int v = 0; v < nodeIndex; v++) {
@@ -61,15 +61,15 @@ void deleteEdge(struct Graph* graph, struct node* n1, struct node* n2) {
         graph->array[n2->info->vertex] == NULL;
         nodeIndex--;
     }
-    printGraph(graph);
+    //printGraph(graph);
 }
 
 bool isCyclicUtil(struct Graph* graph, int vertex, bool* visited[], bool* recStack[])
 {
-    if (recStack[vertex] == true) {
+    if (recStack[vertex]) {
         return true;
     }
-    if (visited[vertex] == true) {
+    if (visited[vertex]) {
         return false;
     }
 
@@ -115,7 +115,7 @@ bool isCyclic(struct Graph* graph)
 
     for (int i = 0; i < nodeIndex; i++) {
         if (isCyclicUtil(graph, i, visited, recStack)) {
-            printf("there is a cycle\n");
+            //printf("there is a cycle\n");
             return true;
         }
     }

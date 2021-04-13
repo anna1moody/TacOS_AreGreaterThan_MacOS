@@ -42,10 +42,12 @@ bool isVar(char *var){
 %x var_exp_condition
 %x var_in_string
 
-CHAR            [.A-Za-z0-9!\/_-][.A-Za-z0-9!\/_-]*
-ANYCHAR            [)(*&%$#@!`;,\.a-zA-Z0-9'/*_=~ -][)(*&%$#@!`;,\.a-zA-Z0-9'/*_=~ -]*
+CHAR            [.A-Za-z0-9?*!:\/_-][.A-Z:?*a-z0-9!\/_-]*
+ANYCHAR            [)(*&%$#@!`;,\.a-zA-Z0-9:'/*_=~ -][)(*&:%$#@!`;,\.a-zA-Z0-9'/*_=~ -]*
 META            [<>|\"&]+
 WHITESPACE      [\t ]+
+QUEST           [?]
+
 
 %%
 <var_exp_condition>{ANYCHAR}+     {  yylval.string = strdup(yytext); 
@@ -98,30 +100,62 @@ mv                          { yylval.string = strdup(yytext); return BASIC; }
 ping                        { yylval.string = strdup(yytext); return BASIC; }
 echo                        { yylval.string = strdup(yytext); return BASIC; }
 WHITESPACE          {}
-
+[&]$              {printf("line ends with &\n"); runInBackground = true;}
 "\n"		            { return END; }
 "${"               {BEGIN(var_exp_condition);}
 [\"]                 { BEGIN(string_condition); }
 
 ^{CHAR}+             { 
-                        printf("alias expansion: yytext: %s\n", yytext);
+                        //printf("alias expansion: yytext: %s\n", yytext);
                         if(ifAlias(yytext)) {
-                            printf("is alias: yytext: %s\n", yytext);
+                            aliasExp = true;
+                            //printf("is alias: yytext: %s\n", yytext);
                             //source: https://www.cs.princeton.edu/~appel/modern/c/software/flex/flex.html
                             char *yycopy = strdup( subAliases(yytext) );
-                            printf("yy copy: %s\n", yycopy);
+                            //printf("yy copy: %s\n", yycopy);
                             for ( int i = strlen(subAliases(yytext)) - 1; i >= 0; --i ){
                                unput( yycopy[i] );
                             }
                             free( yycopy );
                         } else {
-                            printf("not alias: yytext: %s\n", yytext);
+                            //printf("not alias: yytext: %s\n", yytext);
                             yylval.string = strdup(yytext);
+                            if (strchr(yylval.string, '?') != NULL){
+                                //? is in the work
+                                //printf("? found\n");
+                            }
+                            if (strchr(yylval.string, '*')){
+                                //printf("* found\n");
+                            }
                             return STRING;
                         }
                         }
-{CHAR}+          { printf(" yytext: %s\n", yytext);
+{CHAR}+          {
+                   if (aliasExp){
+                        aliasExp = false;
+                        if(ifAlias(yytext)) {
+                            aliasExp = true;
+                            //source: https://www.cs.princeton.edu/~appel/modern/c/software/flex/flex.html
+                            char *yycopy = strdup( subAliases(yytext) );
+                            for ( int i = strlen(subAliases(yytext)) - 1; i >= 0; --i ){
+                               unput( yycopy[i] );
+                            }
+                            free( yycopy );
+                        } else {
+                            yylval.string = strdup(yytext);
+                            return STRING;
+                        }
+                 }
+                 else{
                    yylval.string = strdup(yytext);
+                   if (strchr(yylval.string, '?') != NULL){
+                        //? is in the work
+                        pattern = true;
+                   }
+                   if (strchr(yylval.string, '*')){
+                        pattern = true;
+                   }
                    return STRING;
                  }
+              }
 %%
