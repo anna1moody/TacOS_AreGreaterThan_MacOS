@@ -1,2 +1,1 @@
-cat: missing2.txt: No such file or directory
-hello world
+cat: missing.txt: No such file or directory
