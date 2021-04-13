@@ -1,9 +1,5 @@
 apple
-
 banana
-
 carrot
-
 banana
-
 elk

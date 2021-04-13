@@ -61,7 +61,12 @@ extern int yydebug;
     UNALIAS = 267,
     VALEXP = 268,
     BASIC = 269,
-    AND = 270
+    AND = 270,
+    INPUT = 271,
+    OUTPUT = 272,
+    DOUBLE = 273,
+    STDERR = 274,
+    STDERRSTDOUT = 275
   };
 #endif
 
@@ -69,10 +74,10 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 42 "nutshparser.y"
+#line 50 "nutshparser.y"
 char *string;
 
-#line 76 "nutshparser.tab.h"
+#line 81 "nutshparser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

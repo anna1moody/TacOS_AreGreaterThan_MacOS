@@ -19,6 +19,8 @@ struct bcTable {
         char input[128][100];
         char output[128][100];
         char patternArgs[128][100];
+        
+        bool in, out, isDouble, stderr_stdoutput;
 };
 
 char cwd[PATH_MAX];
@@ -27,7 +29,7 @@ struct evTable varTable;
 
 struct aTable aliasTable;
 
-int aliasIndex, varIndex, nodeIndex, bcIndex;
+int aliasIndex, varIndex, nodeIndex, bcIndex, inputIndex, outputIndex;
 struct bcTable commandTable;
 bool runInBackground, aliasExp, pattern;
 

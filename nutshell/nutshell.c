@@ -4,8 +4,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "global.h"
+#include <stdbool.h>
 #include <unistd.h>
+#include "global.h"
 
 char *getcwd(char *buf, size_t size);
 int yyparse();
@@ -29,6 +30,8 @@ int main()
     varIndex = 0;
     bcIndex = 0;
     nodeIndex = 0;
+    inputIndex = 0;
+    outputIndex = 0;
     runInBackground = false;
     aliasExp = false;
     pattern = false;
@@ -56,6 +59,10 @@ int main()
     strcpy(commandTable.temp[bcIndex], "");
     strcpy(commandTable.input[bcIndex], "");
     strcpy(commandTable.output[bcIndex], "");
+    commandTable.in = 0;
+    commandTable.out = 0;
+    commandTable.isDouble = 0;
+    commandTable.stderr_stdoutput = 0;
     bcIndex++;
 
     system("clear");

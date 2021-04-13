@@ -4,7 +4,9 @@
 // Only "alias name word", "cd word", and "bye" run.
 #include "nutshparser.tab.h"
 #include <string.h>
+#include <stdbool.h>
 #include "global.h"
+
 
 
 char* subAliases(char* name){
@@ -42,9 +44,9 @@ bool isVar(char *var){
 %x var_exp_condition
 %x var_in_string
 
-CHAR            [.A-Za-z0-9?*!:\/_-][.A-Z:?*a-z0-9!\/_-]*
-ANYCHAR            [)(*&%$#@!`;,\.a-zA-Z0-9:'/*_=~ -][)(*&:%$#@!`;,\.a-zA-Z0-9'/*_=~ -]*
-META            [<>|\"&]+
+CHAR            [.A-Za-z0-9?*!<>:\/_-][.A-Z?*a-z0-9!<>:\/_-]*
+ANYCHAR            [)(*&%$#@!`;,\.a-zA-Z0-9<>:'/*_=~ -][)(*&%$#@!`;,\.a-zA-Z0-9<>:'/*_=~ -]*
+META            [|\"&]+
 WHITESPACE      [\t ]+
 QUEST           [?]
 
@@ -99,37 +101,43 @@ cp                          { yylval.string = strdup(yytext); return BASIC; }
 mv                          { yylval.string = strdup(yytext); return BASIC; }
 ping                        { yylval.string = strdup(yytext); return BASIC; }
 echo                        { yylval.string = strdup(yytext); return BASIC; }
+ssh                         { yylval.string = strdup(yytext); return BASIC; }
+date                        { yylval.string = strdup(yytext); return BASIC; }
+touch                       { yylval.string = strdup(yytext); return BASIC; }
+rm                          { yylval.string = strdup(yytext); return BASIC; }
+tty                         { yylval.string = strdup(yytext); return BASIC; }
+mkdir                       { yylval.string = strdup(yytext); return BASIC; }
+rmdir                       { yylval.string = strdup(yytext); return BASIC; }
+wc                          { yylval.string = strdup(yytext); return BASIC; }
+grep                        { yylval.string = strdup(yytext); return BASIC; }
+users			    { yylval.string = strdup(yytext); return BASIC; }
+
+"<"                         { yylval.string = strdup(yytext); return INPUT; }
+">"                         { yylval.string = strdup(yytext); return OUTPUT; }
+">>"			    { yylval.string = strdup(yytext); return DOUBLE; }
+"2>&1"                      { return STDERRSTDOUT; }
+2>{CHAR}+                   { yylval.string = strdup(yytext); return STDERR; }
+
 WHITESPACE          {}
-[&]$              {printf("line ends with &\n"); runInBackground = true;}
+[&]$              { runInBackground = true;}
 "\n"		            { return END; }
 "${"               {BEGIN(var_exp_condition);}
 [\"]                 { BEGIN(string_condition); }
 
 ^{CHAR}+             { 
-                        //printf("alias expansion: yytext: %s\n", yytext);
                         if(ifAlias(yytext)) {
                             aliasExp = true;
-                            //printf("is alias: yytext: %s\n", yytext);
                             //source: https://www.cs.princeton.edu/~appel/modern/c/software/flex/flex.html
                             char *yycopy = strdup( subAliases(yytext) );
-                            //printf("yy copy: %s\n", yycopy);
                             for ( int i = strlen(subAliases(yytext)) - 1; i >= 0; --i ){
                                unput( yycopy[i] );
                             }
                             free( yycopy );
                         } else {
-                            //printf("not alias: yytext: %s\n", yytext);
                             yylval.string = strdup(yytext);
-                            if (strchr(yylval.string, '?') != NULL){
-                                //? is in the work
-                                //printf("? found\n");
-                            }
-                            if (strchr(yylval.string, '*')){
-                                //printf("* found\n");
-                            }
                             return STRING;
                         }
-                        }
+                     }
 {CHAR}+          {
                    if (aliasExp){
                         aliasExp = false;

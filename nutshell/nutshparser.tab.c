@@ -79,6 +79,9 @@
 #include <string.h>
 #include <stddef.h>
 #include <dirent.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <stdbool.h>
 #include "graph.c"
 
 void resetPATH();
@@ -96,18 +99,23 @@ int runCDn(void);
 int runSetAlias(char *name, char *word);
 int runPrintAlias();
 int runRemoveAlias(char *name);
-int runValExpansion(char *n);
 int runBasic(char *name);
 bool wildCardHelper(char* curFile, char* arg);
 char* runWildCard(char *card, char *arg);
 
 int argCount = 0;
+int inputCounter = 0;
+int outputCounter = 0;
 
 void fixComTable(char *name);
 void addArguments(char *arg);
 void fixArguments();
+void fixIO(char *arg);
 
-#line 111 "nutshparser.tab.c"
+void stderror(char *arg);
+void stderr_stdout();
+
+#line 119 "nutshparser.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -167,7 +175,12 @@ extern int yydebug;
     UNALIAS = 267,
     VALEXP = 268,
     BASIC = 269,
-    AND = 270
+    AND = 270,
+    INPUT = 271,
+    OUTPUT = 272,
+    DOUBLE = 273,
+    STDERR = 274,
+    STDERRSTDOUT = 275
   };
 #endif
 
@@ -175,10 +188,10 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 42 "nutshparser.y"
+#line 50 "nutshparser.y"
 char *string;
 
-#line 182 "nutshparser.tab.c"
+#line 195 "nutshparser.tab.c"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -495,21 +508,21 @@ union yyalloc
 #endif /* !YYCOPY_NEEDED */
 
 /* YYFINAL -- State number of the termination state.  */
-#define YYFINAL  26
+#define YYFINAL  32
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   33
+#define YYLAST   43
 
 /* YYNTOKENS -- Number of terminals.  */
-#define YYNTOKENS  16
+#define YYNTOKENS  21
 /* YYNNTS -- Number of nonterminals.  */
-#define YYNNTS  4
+#define YYNNTS  6
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  16
+#define YYNRULES  23
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  36
+#define YYNSTATES  45
 
 #define YYUNDEFTOK  2
-#define YYMAXUTOK   270
+#define YYMAXUTOK   275
 
 
 /* YYTRANSLATE(TOKEN-NUM) -- Symbol number corresponding to TOKEN-NUM
@@ -548,15 +561,16 @@ static const yytype_int8 yytranslate[] =
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     1,     2,     3,     4,
        5,     6,     7,     8,     9,    10,    11,    12,    13,    14,
-      15
+      15,    16,    17,    18,    19,    20
 };
 
 #if YYDEBUG
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int8 yyrline[] =
 {
-       0,    52,    52,    53,    54,    55,    56,    57,    58,    59,
-      60,    61,    62,    63,    67,    71,    72
+       0,    62,    62,    63,    64,    65,    66,    67,    68,    69,
+      70,    71,    72,    73,    77,    81,    82,    83,    84,    88,
+      89,    90,    94,    95
 };
 #endif
 
@@ -567,7 +581,8 @@ static const char *const yytname[] =
 {
   "$end", "error", "$undefined", "BYE", "SETENV", "PRINTENV", "UNSETENV",
   "CD", "STRING", "ALIAS", "END", "TILDE", "UNALIAS", "VALEXP", "BASIC",
-  "AND", "$accept", "basic", "args", "cmd_line", YY_NULLPTR
+  "AND", "INPUT", "OUTPUT", "DOUBLE", "STDERR", "STDERRSTDOUT", "$accept",
+  "basic", "args", "meta", "err", "cmd_line", YY_NULLPTR
 };
 #endif
 
@@ -577,11 +592,12 @@ static const char *const yytname[] =
 static const yytype_int16 yytoknum[] =
 {
        0,   256,   257,   258,   259,   260,   261,   262,   263,   264,
-     265,   266,   267,   268,   269,   270
+     265,   266,   267,   268,   269,   270,   271,   272,   273,   274,
+     275
 };
 # endif
 
-#define YYPACT_NINF (-6)
+#define YYPACT_NINF (-18)
 
 #define yypact_value_is_default(Yyn) \
   ((Yyn) == YYPACT_NINF)
@@ -595,10 +611,11 @@ static const yytype_int16 yytoknum[] =
      STATE-NUM.  */
 static const yytype_int8 yypact[] =
 {
-      -3,    -5,    -1,    -2,     5,     4,     8,    12,    11,    -6,
-       9,    22,    -6,    15,    -6,    14,    16,    -6,    17,    20,
-      -6,    19,    -6,     9,    -6,    -6,    -6,    21,    -6,    -6,
-      -6,    23,    -6,    -6,    -6,    -6
+      17,    -9,    19,    -6,    24,    -5,    20,    25,   -18,    -1,
+       2,   -18,    26,   -18,   -18,   -18,   -18,    -1,    15,    27,
+     -18,    28,    31,   -18,    30,    -1,   -18,   -18,   -18,   -18,
+      -1,    -1,   -18,    32,   -18,   -18,   -18,   -18,    33,   -18,
+     -18,   -18,   -18,   -18,   -18
 };
 
   /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -606,22 +623,23 @@ static const yytype_int8 yypact[] =
      means the default is an error.  */
 static const yytype_int8 yydefact[] =
 {
-       0,     0,     0,     0,     0,     0,     0,     0,     0,    14,
-       0,     0,     2,     0,     4,     0,     0,     6,     0,     0,
-      10,     0,    12,     0,    16,    13,     1,     0,     5,     8,
-       7,     0,    11,    15,     3,     9
+       0,     0,     0,     0,     0,     0,     0,     0,    14,     0,
+       0,     2,     0,     4,    19,    20,    21,     0,     0,     0,
+       7,     0,     0,    11,     0,     0,    18,    22,    23,    13,
+       0,     0,     1,     0,     5,     6,     9,     8,     0,    12,
+      15,    16,    17,     3,    10
 };
 
   /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-      -6,    -6,     2,    -6
+     -18,   -18,   -17,    38,   -18,   -18
 };
 
   /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-      -1,    10,    25,    11
+      -1,     9,    29,    30,    31,    10
 };
 
   /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -629,42 +647,47 @@ static const yytype_int8 yydefgoto[] =
      number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_int8 yytable[] =
 {
-       1,     2,     3,     4,     5,    12,     6,    13,    14,     7,
-       8,     9,    16,    15,    17,    18,    19,    23,    20,    24,
-      21,    22,    26,    27,    28,    33,    29,    30,    31,    32,
-       0,    34,     0,    35
+      34,    11,    32,    19,    13,    20,    21,    25,    40,    26,
+      14,    15,    16,    41,    42,    14,    15,    16,    27,    28,
+       1,     2,     3,     4,     5,    35,     6,    12,    22,     7,
+      23,     8,    18,    24,    33,     0,     0,    36,    37,    38,
+      39,    17,    43,    44
 };
 
 static const yytype_int8 yycheck[] =
 {
-       3,     4,     5,     6,     7,    10,     9,     8,    10,    12,
-      13,    14,     8,     8,    10,    11,     8,     8,    10,    10,
-       8,    10,     0,     8,    10,    23,    10,    10,     8,    10,
-      -1,    10,    -1,    10
+      17,    10,     0,     8,    10,    10,    11,     8,    25,    10,
+      16,    17,    18,    30,    31,    16,    17,    18,    19,    20,
+       3,     4,     5,     6,     7,    10,     9,     8,     8,    12,
+      10,    14,     8,     8,     8,    -1,    -1,    10,    10,     8,
+      10,     3,    10,    10
 };
 
   /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
      symbol of state STATE-NUM.  */
 static const yytype_int8 yystos[] =
 {
-       0,     3,     4,     5,     6,     7,     9,    12,    13,    14,
-      17,    19,    10,     8,    10,     8,     8,    10,    11,     8,
-      10,     8,    10,     8,    10,    18,     0,     8,    10,    10,
-      10,     8,    10,    18,    10,    10
+       0,     3,     4,     5,     6,     7,     9,    12,    14,    22,
+      26,    10,     8,    10,    16,    17,    18,    24,     8,     8,
+      10,    11,     8,    10,     8,     8,    10,    19,    20,    23,
+      24,    25,     0,     8,    23,    10,    10,    10,     8,    10,
+      23,    23,    23,    10,    10
 };
 
   /* YYR1[YYN] -- Symbol number of symbol that rule YYN derives.  */
 static const yytype_int8 yyr1[] =
 {
-       0,    16,    19,    19,    19,    19,    19,    19,    19,    19,
-      19,    19,    19,    19,    17,    18,    18
+       0,    21,    26,    26,    26,    26,    26,    26,    26,    26,
+      26,    26,    26,    26,    22,    23,    23,    23,    23,    24,
+      24,    24,    25,    25
 };
 
   /* YYR2[YYN] -- Number of symbols on the right hand side of rule YYN.  */
 static const yytype_int8 yyr2[] =
 {
-       0,     2,     2,     4,     2,     3,     2,     3,     3,     4,
-       2,     3,     2,     2,     1,     2,     1
+       0,     2,     2,     4,     2,     3,     3,     2,     3,     3,
+       4,     2,     3,     2,     1,     2,     2,     2,     1,     1,
+       1,     1,     1,     1
 };
 
 
@@ -1360,97 +1383,121 @@ yyreduce:
   switch (yyn)
     {
   case 2:
-#line 52 "nutshparser.y"
+#line 62 "nutshparser.y"
                                                 {exit(1); return 1;}
-#line 1366 "nutshparser.tab.c"
+#line 1389 "nutshparser.tab.c"
     break;
 
   case 3:
-#line 53 "nutshparser.y"
+#line 63 "nutshparser.y"
                                                 {runSetEnv((yyvsp[-2].string), (yyvsp[-1].string)); return 1;}
-#line 1372 "nutshparser.tab.c"
+#line 1395 "nutshparser.tab.c"
     break;
 
   case 4:
-#line 54 "nutshparser.y"
+#line 64 "nutshparser.y"
                                                 {runPrintEnv(); return 1;}
-#line 1378 "nutshparser.tab.c"
+#line 1401 "nutshparser.tab.c"
     break;
 
   case 5:
-#line 55 "nutshparser.y"
-                                                {runUnsetEnv((yyvsp[-1].string)); return 1;}
-#line 1384 "nutshparser.tab.c"
+#line 65 "nutshparser.y"
+                                                {runPrintEnv(); return 1;}
+#line 1407 "nutshparser.tab.c"
     break;
 
   case 6:
-#line 56 "nutshparser.y"
-                                                {runCDn(); return 1;}
-#line 1390 "nutshparser.tab.c"
+#line 66 "nutshparser.y"
+                                                {runUnsetEnv((yyvsp[-1].string)); return 1;}
+#line 1413 "nutshparser.tab.c"
     break;
 
   case 7:
-#line 57 "nutshparser.y"
+#line 67 "nutshparser.y"
                                                 {runCDn(); return 1;}
-#line 1396 "nutshparser.tab.c"
+#line 1419 "nutshparser.tab.c"
     break;
 
   case 8:
-#line 58 "nutshparser.y"
-                                                {runCD((yyvsp[-1].string)); return 1;}
-#line 1402 "nutshparser.tab.c"
+#line 68 "nutshparser.y"
+                                                {runCDn(); return 1;}
+#line 1425 "nutshparser.tab.c"
     break;
 
   case 9:
-#line 59 "nutshparser.y"
-                                                {runSetAlias((yyvsp[-2].string), (yyvsp[-1].string)); return 1;}
-#line 1408 "nutshparser.tab.c"
+#line 69 "nutshparser.y"
+                                                {runCD((yyvsp[-1].string)); return 1;}
+#line 1431 "nutshparser.tab.c"
     break;
 
   case 10:
-#line 60 "nutshparser.y"
-                                                {runPrintAlias(); return 1;}
-#line 1414 "nutshparser.tab.c"
+#line 70 "nutshparser.y"
+                                                {runSetAlias((yyvsp[-2].string), (yyvsp[-1].string)); return 1;}
+#line 1437 "nutshparser.tab.c"
     break;
 
   case 11:
-#line 61 "nutshparser.y"
-                                                {runRemoveAlias((yyvsp[-1].string)); return 1;}
-#line 1420 "nutshparser.tab.c"
+#line 71 "nutshparser.y"
+                                                {runPrintAlias(); return 1;}
+#line 1443 "nutshparser.tab.c"
     break;
 
   case 12:
-#line 62 "nutshparser.y"
-                                                {printf("second part, %s\n", (yyvsp[-1].string));runValExpansion((yyvsp[-1].string)); return 1;}
-#line 1426 "nutshparser.tab.c"
+#line 72 "nutshparser.y"
+                                                {runRemoveAlias((yyvsp[-1].string)); return 1;}
+#line 1449 "nutshparser.tab.c"
     break;
 
   case 13:
-#line 63 "nutshparser.y"
+#line 73 "nutshparser.y"
                                                 {addArguments("null"); fixArguments(); runBasic((yyvsp[-1].string)); return 1;}
-#line 1432 "nutshparser.tab.c"
+#line 1455 "nutshparser.tab.c"
     break;
 
   case 14:
-#line 67 "nutshparser.y"
+#line 77 "nutshparser.y"
                                                 {(yyval.string) = (yyvsp[0].string); fixComTable((yyvsp[0].string)); addArguments((yyvsp[0].string));}
-#line 1438 "nutshparser.tab.c"
+#line 1461 "nutshparser.tab.c"
     break;
 
   case 15:
-#line 71 "nutshparser.y"
-                                                {addArguments((yyvsp[-1].string));}
-#line 1444 "nutshparser.tab.c"
+#line 81 "nutshparser.y"
+                                                {(yyval.string) = (yyvsp[-1].string); addArguments((yyvsp[-1].string)); fixIO((yyvsp[-1].string));}
+#line 1467 "nutshparser.tab.c"
     break;
 
-  case 16:
-#line 72 "nutshparser.y"
-                                                {}
-#line 1450 "nutshparser.tab.c"
+  case 19:
+#line 88 "nutshparser.y"
+                                                {inputCounter++; commandTable.in = 1; commandTable.out = 0;}
+#line 1473 "nutshparser.tab.c"
+    break;
+
+  case 20:
+#line 89 "nutshparser.y"
+                                                {outputCounter++; commandTable.in = 0; commandTable.out = 1;}
+#line 1479 "nutshparser.tab.c"
+    break;
+
+  case 21:
+#line 90 "nutshparser.y"
+                                                {outputCounter++; commandTable.isDouble = true; commandTable.in = 0; commandTable.out = 1;}
+#line 1485 "nutshparser.tab.c"
+    break;
+
+  case 22:
+#line 94 "nutshparser.y"
+                                                {outputCounter++; stderror((yyvsp[0].string));}
+#line 1491 "nutshparser.tab.c"
+    break;
+
+  case 23:
+#line 95 "nutshparser.y"
+                                                {stderr_stdout();}
+#line 1497 "nutshparser.tab.c"
     break;
 
 
-#line 1454 "nutshparser.tab.c"
+#line 1501 "nutshparser.tab.c"
 
       default: break;
     }
@@ -1682,7 +1729,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 75 "nutshparser.y"
+#line 98 "nutshparser.y"
 
 
 bool wildCardHelper(char* curFile, char* arg){
@@ -1731,7 +1778,9 @@ void addArguments(char *arg) {
                 strcpy(commandTable.comArgs[argCount], "NULL");
 				argCount++;
 
-        } else {
+        } else if(inputCounter > 0 || outputCounter > 0) {
+			//Skip adding argument
+		} else {
 				if (strchr(arg, '?') != NULL || strchr(arg, '*') != NULL) {
 					pCount = argCount;
 					char temp[100];
@@ -1767,7 +1816,7 @@ void addArguments(char *arg) {
 }
 
 void fixArguments() {
-        if(argCount == 2 || argCount == 3) {
+	if(argCount == 2 || argCount == 3) {
                 return;
         } else {
                 int j = argCount - 2;
@@ -1783,7 +1832,46 @@ void fixArguments() {
 void resetArguments() {
         for(int i = 0; i < argCount; i++) {
                 strcpy(commandTable.comArgs[i], "");
+		strcpy(commandTable.input[i], "");
+		strcpy(commandTable.output[i], "");
         }
+	commandTable.in = 0;
+	commandTable.out = 0;
+	commandTable.isDouble = 0;
+	commandTable.stderr_stdoutput = 0;
+	inputIndex = 0;
+	outputIndex = 0;
+	inputCounter = 0;
+        outputCounter = 0;
+}
+
+void fixIO(char *arg) {
+	if(outputCounter > 0) {
+                strcpy(commandTable.output[outputIndex], arg);
+                //commandTable.out = 0;
+                //commandTable.in = 0;
+                outputIndex++;
+                outputCounter--;
+        } else if(inputCounter > 0) {
+		strcpy(commandTable.input[inputIndex], arg);
+		//commandTable.in = 0;
+		//commandTable.out = 0;
+		inputIndex++;
+		inputCounter--;
+	}
+}
+
+void stderror(char *arg) {
+	char fixed[strlen(arg) - 2];
+	for(int i = 2; i < strlen(arg); i++) { // Clip 2> from output path
+		fixed[i-2] = arg[i];
+	}
+	printf("%s\n", fixed);
+	strcpy(commandTable.output[1], fixed);
+}
+
+void stderr_stdout() {
+	commandTable.stderr_stdoutput = true; // Flag I/O redirection from 
 }
 
 void resetPATH() {
@@ -1835,7 +1923,11 @@ int runSetEnv(char *var, char *word) {
 	
 }
 
+//wondering if that i should be varIndex
 int runPrintEnv() {
+	if(commandTable.output[0] != "") {
+		printf("There is output file: %s\n", commandTable.output[0]);
+	}
 	for (int i = 0; i < sizeof(varTable.var); i++) {
 		if(strcmp(varTable.var[i], "") == 0) {
 			return 1;
@@ -1843,13 +1935,22 @@ int runPrintEnv() {
 			printf("%s=%s\n", varTable.var[i], varTable.word[i]);
 		}
 	}
+	resetArguments();
+	printf("Output is clean: %s\n", commandTable.output[0]);
+	argCount = 0;
 	return 1;
 }
 
 int runUnsetEnv(char *var) {
         for (int i = 0; i < sizeof(varTable.var); i++) {
                 if(strcmp(varTable.var[i], "") == 0) {
-			printf("No %s variable exists.\n", var);
+						printf("No %s variable exists.\n", var);
+                        return 1;
+                } else if (strcmp(var, "HOME") == 0) {
+						printf("Error: cannot unset HOME\n");
+						return 1;
+				} else if (strcmp(var, "PATH") == 0) {
+						printf("Error: cannot unset PATH\n");
                         return 1;
                 } else if (strcmp(varTable.var[i], var) == 0) {
                         strcpy(varTable.word[i], "");
@@ -1906,22 +2007,17 @@ int runSetAlias(char *name, char *word) {
 	struct node* n2;
 	bool createdName = false;
 	bool createdWord = false;
-	//printf("nodeIndex %d graph size: %d\n", nodeIndex, graph->vertices);
 	int i;
 	for (i = 0; i < nodeIndex; i++){
-		//printf("start of node: alias index: %d of %d\n", i, aliasIndex);
-		//printf("node index: %d\n", nodeIndex);
 		struct node* n = graph->array[i];
-			if (strcmp(name, n->info->value) == 0){
-				//printf("createdName: %s = %s\n", n->info->value, name);
-				n1 = n;
-				createdName = true;
-			}
-			if (strcmp(word, n->info->value) == 0){
-				//printf("createdWord: %s = %s\n", n->info->value, word);
-				n2 = n;
-				createdWord = true;
-			}
+		if (strcmp(name, n->info->value) == 0){
+			n1 = n;
+			createdName = true;
+		}
+		if (strcmp(word, n->info->value) == 0){
+			n2 = n;
+			createdWord = true;
+		}
 		
 	}
 		if(!createdName){
@@ -1941,17 +2037,11 @@ int runSetAlias(char *name, char *word) {
 
 	for (int i = 0; i < aliasIndex; i++) {
 		if(strcmp(aliasTable.name[i], name) == 0) {
-			//printf("%s %s %s %s\n", aliasTable.name[i], name, aliasTable.word[i], word);
 			strcpy(aliasTable.word[i], word);
 			return 1;
 		}
 	}
-			
-	
 		
-	
-	//printf(" %s %s\n",  name, word);
-
 	strcpy(aliasTable.name[aliasIndex], name);
 	strcpy(aliasTable.word[aliasIndex], word);
 	aliasIndex++;
@@ -1996,19 +2086,31 @@ int runRemoveAlias(char *name) {
 	return 1;
 }
 
-int runValExpansion(char *n){
-		printf("this is a valExpansion of: %s\n", n);
-		return 1;
-
-}
-
 int runBasic(char *name) {
-		char *boolstring( _Bool b ) { return b ? "true" : "false"; }
 
         strcat(varTable.word[3], "/");
-        strcat(varTable.word[3], commandTable.command[0]);
+        strcat(varTable.word[3], commandTable.command[0]); //char name[][]; instead of char ** name;
         char ** paths = malloc(128 * sizeof(char*));
         getPATHS(paths);
+
+
+		/*
+	printf("Paths:\n");
+        for(int i = 0; paths[i] != NULL; i++) {
+                printf("%s\n", paths[i]);
+        }*/
+	/*
+	for(int i = 0; paths[i] != NULL; i++) {
+		strcat(paths[i], slash);
+		strcat(paths[i], insertCom);
+	}*/
+	/*
+	printf("Paths:\n");
+	for(int i = 0; paths[i] != NULL; i++) {
+		printf("%s\n", paths[i]);
+	}
+	*/
+
 
         char* arg_list[argCount];
 		//printf("commandTable args: ");
@@ -2019,14 +2121,64 @@ int runBasic(char *name) {
         }
         arg_list[argCount - 1] = NULL;
 		//printf("\n");
+		// Testing for arguments
+	for(int i = 0; i < argCount-1; i++) {
+		printf("%s\n", arg_list[i]);
+	}
+	
+	// Testing for I/O redirection
+	//printf("Input: %d\n", commandTable.in);
+	//printf("Output: %d\n", commandTable.out);
+	//printf("error->output: %d\n", commandTable.stderr_stdoutput);
+	
+	printf("Input:\n");
+	for(int i = 0; i < inputIndex; i++) {
+                printf("%s\n", commandTable.input[i]);
+        }
+	printf("Output:\n");
+	for(int i = 0; i < outputIndex; i++) {
+		printf("%s\n", commandTable.output[i]);
+	}
+
+
         pid_t pid = fork();
         if (pid < 0) {
                 exit(1);
         } else if (pid == 0) {
-                for(int i = 0; paths[i] != NULL; i++) {
+                if(commandTable.input[0] != "") { // Checks for directing input
+			int fd0 = open(commandTable.input[0], O_RDONLY, O_APPEND); //fix input
+			dup2(fd0, STDIN_FILENO);
+			close(fd0);
+		}
+
+		if(commandTable.output[0] != "") { // Checks for directing output
+			if(!commandTable.isDouble) {
+				int fd1 = open(commandTable.output[0], O_WRONLY); //fix output
+				dup2(fd1, STDOUT_FILENO);
+				close(fd1);
+			} else if (commandTable.isDouble) {
+				int fd1 = open(commandTable.output[0], O_WRONLY | O_APPEND);
+				dup2(fd1, STDOUT_FILENO);
+				close(fd1);
+			}
+			if(commandTable.stderr_stdoutput) {
+				int fd1 = open(commandTable.output[0], O_WRONLY);
+				dup2(fd1, STDERR_FILENO);
+				close(fd1);
+			}
+		}
+
+		if(commandTable.output[1] != "") {
+			int fd1 = open(commandTable.output[1], O_WRONLY);
+			dup2(fd1, STDERR_FILENO);
+			close(fd1);
+		}	
+
+		for(int i = 0; paths[i] != NULL; i++) {
                         execv(paths[i], arg_list);
                 }
         }
+
 		if (!runInBackground){
 			runInBackground = false;
 			wait(NULL);
