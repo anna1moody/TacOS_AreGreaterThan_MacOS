@@ -63,7 +63,7 @@ void stderr_stdout();
 %%
 cmd_line    :
 	BYE END			                {exit(1); return 1;}
-	| SETENV STRING STRING END		{runSetEnv($2, $3); return 1;}
+	| SETENV STRING	STRING END		{ printf("oijef\n");runSetEnv($2, $3); return 1;}
 	| PRINTENV END				{runPrintEnv(); return 1;}
 	| PRINTENV meta args			{runPrintEnv(); return 1;}
 	| UNSETENV STRING END			{runUnsetEnv($2); return 1;}
@@ -119,9 +119,7 @@ int runExecutable(char *file) {
 	int i;
 	int result;
 	result=system(f);
-	if (result != 0){
-		printf("Error, unable to run the file %s\n", file);
-	}
+	
 	free(temp);
 	free(file);
 	free(f);
@@ -162,7 +160,7 @@ void addArguments(char *arg) {
 		//Skip adding argument if input or output
 	} else {
 		if (strchr(arg, '?') != NULL || strchr(arg, '*') != NULL) {
-			pCount = argCount;
+			bool f = false;
 			char temp[100];
 			DIR *d;
 			struct dirent *dir;
@@ -172,21 +170,37 @@ void addArguments(char *arg) {
 					if (wildCardHelper(dir->d_name, arg)){
 						strcpy(commandTable.comArgs[argCount], dir->d_name);
 						argCount++;
+						f = true;
 					}
 				}
-				for(int i=pCount;i<=argCount;i++) {
-					for(int j=i+1;j<=argCount-1;j++) {
-						if(strcmp(commandTable.comArgs[i],commandTable.comArgs[j]) < 0) {
-							strcpy(temp,commandTable.comArgs[i]);
-							strcpy(commandTable.comArgs[i],commandTable.comArgs[j]);
-							strcpy(commandTable.comArgs[j],temp);
+				if (f){
+					for(int i=pCount;i<=argCount;i++) {
+						for(int j=i+1;j<=argCount-1;j++) {
+							if(strcmp(commandTable.comArgs[i],commandTable.comArgs[j]) < 0) {
+								strcpy(temp,commandTable.comArgs[i]);
+								strcpy(commandTable.comArgs[i],commandTable.comArgs[j]);
+								strcpy(commandTable.comArgs[j],temp);
+							}
 						}
 					}
+				} else{
+						char *temp = malloc(128 * sizeof(char));
+						int tIndex = 0;
+						for (int i = 0; i < strlen(arg); i++){
+							if (arg[i] == '?' || arg[i] == '*'){
+							}
+							else{
+								temp[tIndex] = arg[i];
+								tIndex++;
+							}
+						}
+						strcpy(commandTable.comArgs[argCount], temp);
+						argCount++;
+						free(temp);
+
 				}
 			}
-			pattern = true;
-                } else {
-			pattern = false;
+        } else {
 			strcpy(commandTable.comArgs[argCount], arg);
 			argCount++;
 		}
@@ -319,7 +333,6 @@ int runSetEnv(char *var, char *word) {
 	strcpy(varTable.var[varIndex], var);
 	strcpy(varTable.word[varIndex], word);
 	varIndex++;
-
 	return 1;
 	
 }
@@ -414,10 +427,6 @@ int runUnsetEnv(char *var) {
 }
 
 int runCD(char* arg) {
-	printf("ch with arg %s\n", arg);
-	//printf("%s\n", getcwd(cwd, sizeof(cwd)));
-	//chdir(arg);
-	//printf("%s\n", getcwd(cwd, sizeof(cwd)));
 
 	if (arg[0] != '/') { // arg is relative path
 		

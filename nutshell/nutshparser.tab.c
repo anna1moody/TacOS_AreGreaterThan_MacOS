@@ -1393,7 +1393,7 @@ yyreduce:
 
   case 3:
 #line 66 "nutshparser.y"
-                                                {runSetEnv((yyvsp[-2].string), (yyvsp[-1].string)); return 1;}
+                                                { printf("oijef\n");runSetEnv((yyvsp[-2].string), (yyvsp[-1].string)); return 1;}
 #line 1398 "nutshparser.tab.c"
     break;
 
@@ -1755,26 +1755,20 @@ yyreturn:
 
 int runExecutable(char *file) {
     getcwd(cwd, sizeof(cwd));
-	printf("%s\n", cwd);
 	char *temp = malloc(128 * sizeof(char));
 	char *f = malloc(128 * sizeof(char));
 	for (int i = 1; i < strlen(file); i++){
 		temp[i-1] = file[i];
 	}
-	free(file);
 	strcat(f, cwd);
 	strcat(f, temp);
-	
-	printf("%s\n", f);
-    int i;
-
-    
-
+	int i;
 	int result;
 	result=system(f);
+	
 	free(temp);
+	free(file);
 	free(f);
-	printf("%d\n", result);
 	return 1;
 }
 
@@ -1812,7 +1806,7 @@ void addArguments(char *arg) {
 		//Skip adding argument if input or output
 	} else {
 		if (strchr(arg, '?') != NULL || strchr(arg, '*') != NULL) {
-			pCount = argCount;
+			bool f = false;
 			char temp[100];
 			DIR *d;
 			struct dirent *dir;
@@ -1822,21 +1816,37 @@ void addArguments(char *arg) {
 					if (wildCardHelper(dir->d_name, arg)){
 						strcpy(commandTable.comArgs[argCount], dir->d_name);
 						argCount++;
+						f = true;
 					}
 				}
-				for(int i=pCount;i<=argCount;i++) {
-					for(int j=i+1;j<=argCount-1;j++) {
-						if(strcmp(commandTable.comArgs[i],commandTable.comArgs[j]) < 0) {
-							strcpy(temp,commandTable.comArgs[i]);
-							strcpy(commandTable.comArgs[i],commandTable.comArgs[j]);
-							strcpy(commandTable.comArgs[j],temp);
+				if (f){
+					for(int i=pCount;i<=argCount;i++) {
+						for(int j=i+1;j<=argCount-1;j++) {
+							if(strcmp(commandTable.comArgs[i],commandTable.comArgs[j]) < 0) {
+								strcpy(temp,commandTable.comArgs[i]);
+								strcpy(commandTable.comArgs[i],commandTable.comArgs[j]);
+								strcpy(commandTable.comArgs[j],temp);
+							}
 						}
 					}
+				} else{
+						char *temp = malloc(128 * sizeof(char));
+						int tIndex = 0;
+						for (int i = 0; i < strlen(arg); i++){
+							if (arg[i] == '?' || arg[i] == '*'){
+							}
+							else{
+								temp[tIndex] = arg[i];
+								tIndex++;
+							}
+						}
+						strcpy(commandTable.comArgs[argCount], temp);
+						argCount++;
+						free(temp);
+
 				}
 			}
-			pattern = true;
-                } else {
-			pattern = false;
+        } else {
 			strcpy(commandTable.comArgs[argCount], arg);
 			argCount++;
 		}
@@ -1863,7 +1873,7 @@ void resetArguments() {
                 strcpy(commandTable.comArgs[i], "");
 		strcpy(commandTable.input[i], "");
 		strcpy(commandTable.output[i], "");
-        }
+	}
 	strcpy(commandTable.output[1], "");
 	commandTable.in = 0;
 	commandTable.out = 0;
@@ -1913,20 +1923,10 @@ void getPATHS(char** paths) {
         char *str = malloc(128 * sizeof(char));
         strcpy(str, varTable.word[3]);
 
-	char *slash = malloc(128 * sizeof(char));
-        strcpy(slash, "/");
-        char *comm = malloc(128 * sizeof(char));
-        strcpy(comm, commandTable.command[0]);
-
-        //printf("%s%s\n", slash, comm);
-	//strcat(str, slash);
-
         int init_size = strlen(str);
         char delim[] = ":";
 
         char *ptr = strtok(str, delim);
-	//strcat(ptr, slash);
-	//strcat(ptr, comm);
 
         int pathCount = 0;
         while (ptr != NULL)
@@ -1939,23 +1939,21 @@ void getPATHS(char** paths) {
 }
 
 void fixPATHS(char** paths) {
-	char *slash = malloc(128 * sizeof(char));
-	strcpy(slash, "/");
-	char *comm = malloc(128 * sizeof(char));
-	strcpy(comm, commandTable.command[0]);
+char *str = malloc(128 * sizeof(char));
+        strcpy(str, commandTable.pathsTemp[0]);
 
-	printf("%s%s\n", slash, comm);
+        int init_size = strlen(str);
+        char delim[] = ":";
 
-	for(int i = 0; paths[i] != NULL; i++) {
-		char *temp = malloc(128*sizeof(char));
-		strcpy(temp, paths[i]);
-		printf("Temp: %s", temp);
-		strcat(temp, slash);
-		strcat(temp, comm);
-		strcpy(paths[i], temp);
-		free(temp);
-		printf("%s\n", paths[i]);
-	}
+        char *ptr = strtok(str, delim);
+
+        int pathCount = 0;
+        while (ptr != NULL)
+        {
+                paths[pathCount] = ptr;
+                pathCount++;
+                ptr = strtok(NULL, delim);
+        }
 }
 
 int yyerror(char *s) {
@@ -1981,7 +1979,6 @@ int runSetEnv(char *var, char *word) {
 	strcpy(varTable.var[varIndex], var);
 	strcpy(varTable.word[varIndex], word);
 	varIndex++;
-
 	return 1;
 	
 }
@@ -2076,10 +2073,6 @@ int runUnsetEnv(char *var) {
 }
 
 int runCD(char* arg) {
-	printf("ch with arg %s\n", arg);
-	//printf("%s\n", getcwd(cwd, sizeof(cwd)));
-	//chdir(arg);
-	//printf("%s\n", getcwd(cwd, sizeof(cwd)));
 
 	if (arg[0] != '/') { // arg is relative path
 		
@@ -2275,30 +2268,26 @@ int runRemoveAlias(char *name) {
 
 int runBasic(char *name) {
 
-        strcat(varTable.word[3], "/");
-        strcat(varTable.word[3], commandTable.command[0]);
         char ** paths = malloc(128 * sizeof(char*));
         getPATHS(paths);
-
-	/*
-	printf("Paths:\n");
+	
         for(int i = 0; paths[i] != NULL; i++) {
-                printf("%s\n", paths[i]);
-        }
-	*/
-	//fixPATHS(paths);
-	/*
-	printf("Paths:\n");
-	for(int i = 0; paths[i] != NULL; i++) {
-		
-		printf("%s\n", paths[i]);
+		strcpy(commandTable.pathsTemp[i], paths[i]);
+		strcat(commandTable.pathsTemp[i], "/");
+		strcat(commandTable.pathsTemp[i], commandTable.command[0]);
 	}
-	*/
+	
+	for(int i = 1; paths[i] != NULL; i++) {
+		strcat(commandTable.pathsTemp[0], ":");
+		strcat(commandTable.pathsTemp[0], commandTable.pathsTemp[i]);
+		strcpy(commandTable.pathsTemp[i], "");
+	}
+
+	fixPATHS(paths);
+	
         char* arg_list[argCount];
-	//printf("commandTable args: ");
 
         for(int i = 0; i < argCount; i++) {
-		//printf("%s ", commandTable.comArgs[i]);
                 arg_list[i] = commandTable.comArgs[i];
         }
         arg_list[argCount - 1] = NULL;
@@ -2404,7 +2393,6 @@ int runBasic(char *name) {
 	*/
 
         free(paths);
-        resetPATH();
         resetArguments();
         argCount = 0;
 	runInBackground = false;

@@ -32,7 +32,7 @@ struct aTable aliasTable;
 
 int aliasIndex, varIndex, nodeIndex, bcIndex, inputIndex, outputIndex;
 struct bcTable commandTable;
-bool runInBackground, aliasExp, pattern;
+bool runInBackground, aliasExp, Aexp;
 
 char* subAliases(char* name);
 

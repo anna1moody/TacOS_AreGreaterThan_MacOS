@@ -34,7 +34,7 @@ int main()
     outputIndex = 0;
     runInBackground = false;
     aliasExp = false;
-    pattern = false;
+    Aexp = false;
 
     getcwd(cwd, sizeof(cwd));
 
