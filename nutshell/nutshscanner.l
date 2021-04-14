@@ -44,7 +44,7 @@ bool isVar(char *var){
 %x var_exp_condition
 %x var_in_string
 
-CHAR            [.A-Za-z0-9?*!<>:\/_-][.A-Z?*a-z0-9!<>:\/_-]*
+CHAR            [.A-Za-z0-9?*!<>:&\/_-][.A-Z?*a-z0-9!<>:&\/_-]*
 ANYCHAR         [)(*&%$#@!`;,\.a-zA-Z0-9<>:'/*_=~ -][)(*&%$#@!`;,\.a-zA-Z0-9<>:'/*_=~ -]*
 META            [|\"]+
 WHITESPACE      [\t ]+

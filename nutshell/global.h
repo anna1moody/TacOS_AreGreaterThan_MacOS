@@ -19,8 +19,8 @@ struct bcTable {
         char input[128][100];
         char output[128][100];
         char patternArgs[128][100];
-        
-        bool in, out, isDouble, stderr_stdoutput;
+
+        bool in, out, isDouble, isErr, stderr_stdoutput;
 };
 
 char cwd[PATH_MAX];

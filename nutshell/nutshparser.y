@@ -18,6 +18,7 @@
 
 void resetPATH();
 void getPATHS(char** paths);
+void fixPATHS(char** paths);
 
 int yylex(void);
 int yyerror(char *s);
@@ -70,6 +71,7 @@ cmd_line    :
 	| CD STRING END				{runCD($2); return 1;}
 	| ALIAS STRING STRING END		{runSetAlias($2, $3); return 1;}
 	| ALIAS END				{runPrintAlias(); return 1;}
+	| ALIAS meta args			{runPrintAlias(); return 1;}
 	| UNALIAS STRING END			{runRemoveAlias($2); return 1;}
 	| command args                          {addArguments("null"); fixArguments(); runBasic($1); return 1;}
 	;
@@ -87,7 +89,7 @@ args:
         STRING args                             {$$ = $1; addArguments($1); fixIO($1);}
         | meta args
 	| err args								
-	| END					
+	| END					{fixIO($1);}
         ;
 
 meta:
@@ -189,6 +191,7 @@ void resetArguments() {
 		strcpy(commandTable.input[i], "");
 		strcpy(commandTable.output[i], "");
         }
+	strcpy(commandTable.output[1], "");
 	commandTable.in = 0;
 	commandTable.out = 0;
 	commandTable.isDouble = 0;
@@ -220,8 +223,9 @@ void stderror(char *arg) {
 	for(int i = 2; i < strlen(arg); i++) { // Clip 2> from output path
 		fixed[i-2] = arg[i];
 	}
-	printf("%s\n", fixed);
+	//printf("%s\n", fixed);
 	strcpy(commandTable.output[1], fixed);
+	outputCounter--;
 }
 
 void stderr_stdout() {
@@ -235,10 +239,21 @@ void resetPATH() {
 void getPATHS(char** paths) {
         char *str = malloc(128 * sizeof(char));
         strcpy(str, varTable.word[3]);
+
+	char *slash = malloc(128 * sizeof(char));
+        strcpy(slash, "/");
+        char *comm = malloc(128 * sizeof(char));
+        strcpy(comm, commandTable.command[0]);
+
+        //printf("%s%s\n", slash, comm);
+	//strcat(str, slash);
+
         int init_size = strlen(str);
         char delim[] = ":";
 
         char *ptr = strtok(str, delim);
+	//strcat(ptr, slash);
+	//strcat(ptr, comm);
 
         int pathCount = 0;
         while (ptr != NULL)
@@ -246,8 +261,28 @@ void getPATHS(char** paths) {
                 paths[pathCount] = ptr;
 				printf("The PATH!!!    %s\n", paths[pathCount]);
                 pathCount++;
-                ptr = strtok(NULL, delim);
-        }
+		ptr = strtok(NULL, delim);
+	}
+}
+
+void fixPATHS(char** paths) {
+	char *slash = malloc(128 * sizeof(char));
+	strcpy(slash, "/");
+	char *comm = malloc(128 * sizeof(char));
+	strcpy(comm, commandTable.command[0]);
+
+	printf("%s%s\n", slash, comm);
+
+	for(int i = 0; paths[i] != NULL; i++) {
+		char *temp = malloc(128*sizeof(char));
+		strcpy(temp, paths[i]);
+		printf("Temp: %s", temp);
+		strcat(temp, slash);
+		strcat(temp, comm);
+		strcpy(paths[i], temp);
+		free(temp);
+		printf("%s\n", paths[i]);
+	}
 }
 
 int yyerror(char *s) {
@@ -280,18 +315,70 @@ int runSetEnv(char *var, char *word) {
 
 //wondering if that i should be varIndex
 int runPrintEnv() {
+	/*
 	if(commandTable.output[0] != "") {
-		printf("There is output file: %s\n", commandTable.output[0]);
+		printf("Output file: %s\n", commandTable.output[0]);
 	}
-	for (int i = 0; i < sizeof(varTable.var); i++) {
-		if(strcmp(varTable.var[i], "") == 0) {
-			return 1;
-		} else {
-			printf("%s=%s\n", varTable.var[i], varTable.word[i]);
+	*/
+	pid_t pid = fork();
+        if (pid < 0) {
+                exit(1);
+        } else if (pid == 0) {
+                if(commandTable.input[0] != "") { // Checks for directing input
+                        int fd0 = open(commandTable.input[0], O_RDONLY, O_APPEND); //fix input
+                        dup2(fd0, STDIN_FILENO);
+                        close(fd0);
+                }
+
+                if(commandTable.output[0] != "") { // Checks for directing output
+                        if(!commandTable.isDouble) {
+                                int fd1 = open(commandTable.output[0], O_WRONLY); //fix output
+                                dup2(fd1, STDOUT_FILENO);
+                                close(fd1);
+                        } else if (commandTable.isDouble) {
+                                int fd1 = open(commandTable.output[0], O_WRONLY | O_APPEND);
+                                dup2(fd1, STDOUT_FILENO);
+                                close(fd1);
+                        }
+                        if(commandTable.stderr_stdoutput) {
+                                int fd1 = open(commandTable.output[0], O_WRONLY);
+                                dup2(fd1, STDERR_FILENO);
+                                close(fd1);
+                        }
+                }
+
+                if(commandTable.output[1] != "") {
+                        int fd1 = open(commandTable.output[1], O_WRONLY);
+                        dup2(fd1, STDERR_FILENO);
+                        close(fd1);
+                }
+
+		for (int i = 0; i < sizeof(varTable.var); i++) {
+			if(strcmp(varTable.var[i], "") == 0) {
+				resetArguments();
+				//printf("Output is clean: %s\n", commandTable.output[0]);
+				argCount = 0;
+				exit(0);
+			} else {
+				printf("%s=%s\n", varTable.var[i], varTable.word[i]);
+			}
 		}
-	}
+
+        }
+	wait(NULL);
+	
+	/*
+		for (int i = 0; i < sizeof(varTable.var); i++) {
+			if(strcmp(varTable.var[i], "") == 0) {
+				return 1;
+			} else {
+				printf("%s=%s\n", varTable.var[i], varTable.word[i]);
+			}
+		}
+        */
+
 	resetArguments();
-	printf("Output is clean: %s\n", commandTable.output[0]);
+	//printf("Output is clean: %s\n", commandTable.output[0]);
 	argCount = 0;
 	return 1;
 }
@@ -406,17 +493,76 @@ int runSetAlias(char *name, char *word) {
 }
 
 int runPrintAlias() {
+	/*	
+        if(commandTable.output[0] != "") {
+                printf("Output file: %s\n", commandTable.output[0]);
+        }
+        */
+
+	pid_t pid = fork();
+        if (pid < 0) {
+                exit(1);
+        } else if (pid == 0) {
+                if(commandTable.input[0] != "") { // Checks for directing input
+                        int fd0 = open(commandTable.input[0], O_RDONLY, O_APPEND); //fix input
+                        dup2(fd0, STDIN_FILENO);
+                        close(fd0);
+                }
+
+                if(commandTable.output[0] != "") { // Checks for directing output
+                        if(!commandTable.isDouble) {
+                                int fd1 = open(commandTable.output[0], O_WRONLY); //fix output
+                                dup2(fd1, STDOUT_FILENO);
+                                close(fd1);
+                        } else if (commandTable.isDouble) {
+                                int fd1 = open(commandTable.output[0], O_WRONLY | O_APPEND);
+                                dup2(fd1, STDOUT_FILENO);
+                                close(fd1);
+                        }
+                        if(commandTable.stderr_stdoutput) {
+                                int fd1 = open(commandTable.output[0], O_WRONLY);
+                                dup2(fd1, STDERR_FILENO);
+                                close(fd1);
+                        }
+                }
+
+                if(commandTable.output[1] != "") {
+                        int fd1 = open(commandTable.output[1], O_WRONLY);
+                        dup2(fd1, STDERR_FILENO);
+                        close(fd1);
+                }
 	
-	for (int i = 0; i < aliasIndex; i++) {
-		if(strcmp(aliasTable.name[i], "") == 0) {
-			return 1;
-		} else {
-			printf("%s=%s\n", aliasTable.name[i], aliasTable.word[i]);
+		// Printing aliases...
+		if (aliasIndex == 0) {
+                        printf("There are no available aliases\n");
+			resetArguments();
+			argCount = 0;
+			exit(0);
+                }
+		for (int i = 0; i < aliasIndex; i++) {
+			if(strcmp(aliasTable.name[i], "") == 0) {
+				resetArguments();
+				argCount = 0;
+				exit(0);
+			} else {
+				printf("%s=%s\n", aliasTable.name[i], aliasTable.word[i]);
+			}
 		}
-	}
+		resetArguments();
+		argCount = 0;
+		exit(0);
+        }
+        wait(NULL);
+	
+	/*
 	if (aliasIndex == 0) {
 		printf("There are no available aliases\n");
 	}
+	*/
+
+	resetArguments();
+        //printf("Output is clean: %s\n", commandTable.output[0]);
+        argCount = 0;
 	return 1;
 }
 
@@ -446,39 +592,34 @@ int runRemoveAlias(char *name) {
 int runBasic(char *name) {
 
         strcat(varTable.word[3], "/");
-        strcat(varTable.word[3], commandTable.command[0]); //char name[][]; instead of char ** name;
+        strcat(varTable.word[3], commandTable.command[0]);
         char ** paths = malloc(128 * sizeof(char*));
         getPATHS(paths);
-
 
 	/*
 	printf("Paths:\n");
         for(int i = 0; paths[i] != NULL; i++) {
                 printf("%s\n", paths[i]);
-        }*/
-	/*
-	for(int i = 0; paths[i] != NULL; i++) {
-		strcat(paths[i], slash);
-		strcat(paths[i], insertCom);
-	}*/
+        }
+	*/
+	//fixPATHS(paths);
 	/*
 	printf("Paths:\n");
 	for(int i = 0; paths[i] != NULL; i++) {
+		
 		printf("%s\n", paths[i]);
 	}
 	*/
-
-
         char* arg_list[argCount];
-		//printf("commandTable args: ");
+	//printf("commandTable args: ");
 
         for(int i = 0; i < argCount; i++) {
-				//printf("%s ", commandTable.comArgs[i]);
+		//printf("%s ", commandTable.comArgs[i]);
                 arg_list[i] = commandTable.comArgs[i];
         }
         arg_list[argCount - 1] = NULL;
-		//printf("\n");
-		// Testing for arguments
+	//printf("\n");
+	// Testing for arguments
 	for(int i = 0; i < argCount-1; i++) {
 		printf("%s\n", arg_list[i]);
 	}
@@ -496,6 +637,7 @@ int runBasic(char *name) {
 	for(int i = 0; i < outputIndex; i++) {
 		printf("%s\n", commandTable.output[i]);
 	}
+	printf("Command executing...\n");
 
 	int errvalue;
 	int sizePaths = sizeof paths / sizeof paths[0];
@@ -540,6 +682,19 @@ int runBasic(char *name) {
 			errvalue = errno;
 			runCount[i] = errvalue;
                 }
+
+		for(int i = 0; i < sizePaths; i++) {
+			if(runCount[i] == 0) {
+				didRun = true;
+			}
+		}
+		if(!didRun) {
+			printf("The error generated was %d\n", 2);
+			printf("That means: %s\n", strerror(2));
+			commandTable.isErr = 1;
+		}
+
+		exit(0);
         }
 	
 	if (!runInBackground){
@@ -551,19 +706,18 @@ int runBasic(char *name) {
 	//for(int i = 0; sizePaths; i++) {
 	//	printf("%d\n", runCount[i]);
 	//}
-	
+	/*	
 	for(int i = 0; i < sizePaths; i++) {
 		if(runCount[i] == 0) {
 	                didRun = true;
-                } else {
-			errvalue = runCount[i];
-		}
+                }
         }
         if(!didRun) {
-                printf("The error generated was %d\n", errvalue);
-                printf("That means: %s\n", strerror(errvalue));
-		//yylex();
+                printf("The error generated was %d\n", 2);
+                printf("That means: %s\n", strerror(2));
+		commandTable.isErr = 1;
         }
+	*/
 
         free(paths);
         resetPATH();

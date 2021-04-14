@@ -62,6 +62,7 @@ int main()
     commandTable.in = 0;
     commandTable.out = 0;
     commandTable.isDouble = 0;
+    commandTable.isErr = 0;
     commandTable.stderr_stdoutput = 0;
     bcIndex++;
 
@@ -70,6 +71,10 @@ int main()
     {
         printf("[%s]>> ", varTable.word[2]); // design of shell
         yyparse();
+	if(commandTable.isErr) {
+		//yylex();
+		//commandTable.isErr = 0;
+	}
     }
 
    return 0;
