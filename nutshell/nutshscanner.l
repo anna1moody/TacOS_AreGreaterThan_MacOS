@@ -87,8 +87,8 @@ bye                         { return BYE; }
 setenv			    { return SETENV; }
 printenv	            { return PRINTENV; }
 unsetenv		    { return UNSETENV; }
-cd		            { return CD; }
-"~"                         { return TILDE; }
+cd		            { printf("cd\n"); return CD; }
+"~"                         { printf("tilde\n"); yylval.string = strdup(yytext); return TILDE; }
 "unalias"                   { return UNALIAS; }
 "alias"		            { return ALIAS; }
 

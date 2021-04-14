@@ -33,7 +33,6 @@ int runPrintAlias();
 int runRemoveAlias(char *name);
 int runBasic(char *name);
 bool wildCardHelper(char* curFile, char* arg);
-char* runWildCard(char *card, char *arg);
 
 int argCount = 0;
 int inputCounter = 0;
@@ -67,7 +66,7 @@ cmd_line    :
 	| PRINTENV meta args			{runPrintEnv(); return 1;}
 	| UNSETENV STRING END			{runUnsetEnv($2); return 1;}
 	| CD END				{runCDn(); return 1;}
-	| CD TILDE END				{runCDn(); return 1;}
+	| CD TILDE END				{runCD($2); return 1;}
 	| CD STRING END				{runCD($2); return 1;}
 	| ALIAS STRING STRING END		{runSetAlias($2, $3); return 1;}
 	| ALIAS END				{runPrintAlias(); return 1;}
@@ -122,21 +121,6 @@ bool wildCardHelper(char* curFile, char* arg){
 	}
 	return false;
 	
-}
-
-char* runWildCard(char* card, char* arg){
-	DIR *d;
-	struct dirent *dir;
-	d = opendir(".");
-	if (d){
-		while ((dir = readdir(d)) != NULL){
-			if (wildCardHelper(dir->d_name, arg)){
-				return dir->d_name;
-			}
-		}
-	}
-	printf("Error, couldn't find a matching file to %s\n", arg);
-	return arg;
 }
 
 void fixComTable(char *name) {
@@ -260,6 +244,7 @@ void getPATHS(char** paths) {
         while (ptr != NULL)
         {
                 paths[pathCount] = ptr;
+				printf("The PATH!!!    %s\n", paths[pathCount]);
                 pathCount++;
                 ptr = strtok(NULL, delim);
         }
@@ -331,12 +316,14 @@ int runUnsetEnv(char *var) {
 }
 
 int runCD(char* arg) {
+	printf("ch with arg %s\n", arg);
+	printf("%s\n", getcwd(cwd, sizeof(cwd)));
+	chdir(arg);
+	printf("%s\n", getcwd(cwd, sizeof(cwd)));
 
 	if (arg[0] != '/') { // arg is relative path
-		strcat(varTable.word[0], "/");
-		strcat(varTable.word[0], arg);
-
 		if(chdir(varTable.word[0]) == 0) {
+			printf("what is this\n");
 			return 1;
 		}
 		else {
@@ -575,7 +562,7 @@ int runBasic(char *name) {
         if(!didRun) {
                 printf("The error generated was %d\n", errvalue);
                 printf("That means: %s\n", strerror(errvalue));
-		yylex();
+		//yylex();
         }
 
         free(paths);
