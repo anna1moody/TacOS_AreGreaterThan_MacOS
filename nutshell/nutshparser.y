@@ -34,6 +34,7 @@ int runPrintAlias();
 int runRemoveAlias(char *name);
 int runBasic(char *name);
 bool wildCardHelper(char* curFile, char* arg);
+int runExecutable(char *file);
 
 int argCount = 0;
 int inputCounter = 0;
@@ -51,7 +52,7 @@ void stderr_stdout();
 %union {char *string;}
 
 %start cmd_line
-%token <string> BYE SETENV PRINTENV UNSETENV CD STRING ALIAS END TILDE UNALIAS VALEXP BASIC AND INPUT OUTPUT DOUBLE STDERR STDERRSTDOUT
+%token <string> BYE SETENV PRINTENV UNSETENV CD STRING ALIAS END TILDE UNALIAS VALEXP BASIC AND INPUT OUTPUT DOUBLE STDERR STDERRSTDOUT EXEC
 
 //%nterm <string> basic
 %nterm <string> command
@@ -73,6 +74,7 @@ cmd_line    :
 	| ALIAS END				{runPrintAlias(); return 1;}
 	| ALIAS meta args			{runPrintAlias(); return 1;}
 	| UNALIAS STRING END			{runRemoveAlias($2); return 1;}
+	| EXEC END						{printf("%s\n", $1); runExecutable($1); return 1;}
 	| command args                          {addArguments("null"); fixArguments(); runBasic($1); return 1;}
 	;
 /*
@@ -104,6 +106,27 @@ err:
 	;
 
 %%
+
+int runExecutable(char *file) {
+    getcwd(cwd, sizeof(cwd));
+	char *temp = malloc(128 * sizeof(char));
+	char *f = malloc(128 * sizeof(char));
+	for (int i = 1; i < strlen(file); i++){
+		temp[i-1] = file[i];
+	}
+	strcat(f, cwd);
+	strcat(f, temp);
+	int i;
+	int result;
+	result=system(f);
+	if (result != 0){
+		printf("Error, unable to run the file %s\n", file);
+	}
+	free(temp);
+	free(file);
+	free(f);
+	return 1;
+}
 
 bool wildCardHelper(char* curFile, char* arg){
 	if (*arg == '\0' && *curFile == '\0'){
@@ -404,13 +427,21 @@ int runUnsetEnv(char *var) {
 
 int runCD(char* arg) {
 	printf("ch with arg %s\n", arg);
-	printf("%s\n", getcwd(cwd, sizeof(cwd)));
-	chdir(arg);
-	printf("%s\n", getcwd(cwd, sizeof(cwd)));
+	//printf("%s\n", getcwd(cwd, sizeof(cwd)));
+	//chdir(arg);
+	//printf("%s\n", getcwd(cwd, sizeof(cwd)));
 
 	if (arg[0] != '/') { // arg is relative path
-		if(chdir(varTable.word[0]) == 0) {
-			printf("what is this\n");
+		
+		char *temp = malloc(128 * sizeof(char));
+		strcpy(temp, varTable.word[0]);
+		strcat(temp, "/");
+		strcat(temp, arg);
+		
+		if(chdir(temp) == 0) {
+			strcat(varTable.word[0], "/");
+			strcat(varTable.word[0], arg);
+
 			return 1;
 		}
 		else {
@@ -419,9 +450,11 @@ int runCD(char* arg) {
 			printf("Directory not found\n");
 			return 1;
 		}
+		free(temp);
 	}
 	else { // arg is absolute path
 		if(chdir(arg) == 0){
+			printf("abs path \n");
 			strcpy(varTable.word[0], arg);
 			return 1;
 		}
@@ -430,6 +463,7 @@ int runCD(char* arg) {
                         return 1;
 		}
 	}
+	
 }
 
 int runCDn() {

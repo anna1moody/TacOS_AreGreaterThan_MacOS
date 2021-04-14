@@ -103,7 +103,7 @@ WHITESPACE          {}
 "\n"		            { return END; }
 "${"               {BEGIN(var_exp_condition);}
 [\"]                 { BEGIN(string_condition); }
-
+"./"{CHAR}+             {printf("executable!\n"); yylval.string = strdup(yytext); return EXEC;}
 ^{CHAR}+             { 
                         if(ifAlias(yytext)) {
                             aliasExp = true;
