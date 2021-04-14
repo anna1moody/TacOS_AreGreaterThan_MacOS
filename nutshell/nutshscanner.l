@@ -121,6 +121,8 @@ cd		            { printf("cd\n"); return CD; }
 "2>&1"                      { return STDERRSTDOUT; }
 2>{CHAR}+                   { yylval.string = strdup(yytext); return STDERR; }
 
+"|"			    { yylval.string = strdup(yytext); return PIPE;}
+
 WHITESPACE          {}
 [&]$              { runInBackground = true;}
 "\n"		            { return END; }

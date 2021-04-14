@@ -65,7 +65,6 @@ int main()
     commandTable.isDouble = 0;
     commandTable.isErr = 0;
     commandTable.stderr_stdoutput = 0;
-    bcIndex++;
 
     system("clear");
     while(1)
