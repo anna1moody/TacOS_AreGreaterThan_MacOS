@@ -67,7 +67,8 @@ extern int yydebug;
     DOUBLE = 273,
     STDERR = 274,
     STDERRSTDOUT = 275,
-    EXEC = 276
+    EXEC = 276,
+    PIPE = 277
   };
 #endif
 
@@ -75,10 +76,10 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 52 "nutshparser.y"
+#line 55 "nutshparser.y"
 char *string;
 
-#line 82 "nutshparser.tab.h"
+#line 83 "nutshparser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

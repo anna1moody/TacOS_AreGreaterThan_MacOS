@@ -33,6 +33,7 @@ int runSetAlias(char *name, char *word);
 int runPrintAlias();
 int runRemoveAlias(char *name);
 int runBasic(char *name);
+int runPipe(void);
 bool wildCardHelper(char* curFile, char* arg);
 int runExecutable(char *file);
 
@@ -42,23 +43,26 @@ int outputCounter = 0;
 
 void fixComTable(char *name);
 void addArguments(char *arg);
+void resetArguments();
 void fixArguments();
 void fixIO(char *arg);
 
 void stderror(char *arg);
 void stderr_stdout();
+
 %}
 
 %union {char *string;}
 
 %start cmd_line
-%token <string> BYE SETENV PRINTENV UNSETENV CD STRING ALIAS END TILDE UNALIAS VALEXP BASIC AND INPUT OUTPUT DOUBLE STDERR STDERRSTDOUT EXEC
+%token <string> BYE SETENV PRINTENV UNSETENV CD STRING ALIAS END TILDE UNALIAS VALEXP BASIC AND INPUT OUTPUT DOUBLE STDERR STDERRSTDOUT EXEC PIPE
 
 //%nterm <string> basic
 %nterm <string> command
 %nterm <string> args
 %nterm <string> meta
 %nterm <string> err
+%nterm <string> pipe
 
 %%
 cmd_line    :
@@ -74,8 +78,9 @@ cmd_line    :
 	| ALIAS END				{runPrintAlias(); return 1;}
 	| ALIAS meta args			{runPrintAlias(); return 1;}
 	| UNALIAS STRING END			{runRemoveAlias($2); return 1;}
-	| EXEC END						{printf("%s\n", $1); runExecutable($1); return 1;}
-	| command args                          {addArguments("null"); fixArguments(); runBasic($1); return 1;}
+	| EXEC END				{printf("%s\n", $1); runExecutable($1); return 1;}
+	| command args                          {addArguments("null"); fixArguments(); runBasic($1); return 1;} // Regular command, NO PIPES
+	| command pipe				{addArguments("null"); fixArguments(); runPipe(); return 1;}		
 	;
 /*
 basic:
@@ -94,6 +99,11 @@ args:
 	| END					{fixIO($1);}
         ;
 
+pipe:
+	PIPE command				//{runPipe();}
+	| PIPE command args
+	;
+
 meta:
         INPUT                                   {inputCounter++; commandTable.in = 1; commandTable.out = 0;}
         | OUTPUT                                {outputCounter++; commandTable.in = 0; commandTable.out = 1;}
@@ -106,6 +116,16 @@ err:
 	;
 
 %%
+
+int runPipe() {
+	printf("Command Table:\n");
+	for(int i = 0; i < bcIndex; i++) {
+		printf("%s\n", commandTable.command[i]);
+	}
+	resetArguments();
+	argCount = 0;
+	return 1;
+}
 
 int runExecutable(char *file) {
     getcwd(cwd, sizeof(cwd));
@@ -149,7 +169,8 @@ bool wildCardHelper(char* curFile, char* arg){
 }
 
 void fixComTable(char *name) {
-        strcpy(commandTable.command[0], name);
+        strcpy(commandTable.command[bcIndex], name);
+	bcIndex++;
 }
 
 void addArguments(char *arg) {
@@ -210,7 +231,8 @@ void fixArguments() {
 
 void resetArguments() {
         for(int i = 0; i < argCount; i++) {
-                strcpy(commandTable.comArgs[i], "");
+                strcpy(commandTable.command[i], "");
+		strcpy(commandTable.comArgs[i], "");
 		strcpy(commandTable.input[i], "");
 		strcpy(commandTable.output[i], "");
 	}
@@ -219,6 +241,7 @@ void resetArguments() {
 	commandTable.out = 0;
 	commandTable.isDouble = 0;
 	commandTable.stderr_stdoutput = 0;
+	bcIndex = 0;
 	inputIndex = 0;
 	outputIndex = 0;
 	inputCounter = 0;
