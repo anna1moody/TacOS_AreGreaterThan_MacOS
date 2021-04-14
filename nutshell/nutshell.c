@@ -59,6 +59,7 @@ int main()
     strcpy(commandTable.temp[bcIndex], "");
     strcpy(commandTable.input[bcIndex], "");
     strcpy(commandTable.output[bcIndex], "");
+    strcpy(commandTable.pathsTemp[bcIndex], "");
     commandTable.in = 0;
     commandTable.out = 0;
     commandTable.isDouble = 0;
