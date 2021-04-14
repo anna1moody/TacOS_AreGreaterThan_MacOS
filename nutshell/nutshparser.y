@@ -272,7 +272,6 @@ void getPATHS(char** paths) {
         while (ptr != NULL)
         {
                 paths[pathCount] = ptr;
-				printf("The PATH!!!    %s\n", paths[pathCount]);
                 pathCount++;
 		ptr = strtok(NULL, delim);
 	}
@@ -414,10 +413,6 @@ int runUnsetEnv(char *var) {
 }
 
 int runCD(char* arg) {
-	printf("ch with arg %s\n", arg);
-	//printf("%s\n", getcwd(cwd, sizeof(cwd)));
-	//chdir(arg);
-	//printf("%s\n", getcwd(cwd, sizeof(cwd)));
 
 	if (arg[0] != '/') { // arg is relative path
 		
@@ -427,12 +422,10 @@ int runCD(char* arg) {
 		strcat(temp, arg);
 		
 		if(chdir(temp) == 0) {
-			strcat(varTable.word[0], "/");
-			strcat(varTable.word[0], arg);
-
+			getcwd(cwd, sizeof(cwd));
+			strcpy(varTable.word[0], cwd);
 			return 1;
-		}
-		else {
+		} else {
 			getcwd(cwd, sizeof(cwd));
 			strcpy(varTable.word[0], cwd);
 			printf("Directory not found\n");

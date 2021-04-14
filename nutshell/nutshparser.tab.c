@@ -1755,26 +1755,22 @@ yyreturn:
 
 int runExecutable(char *file) {
     getcwd(cwd, sizeof(cwd));
-	printf("%s\n", cwd);
 	char *temp = malloc(128 * sizeof(char));
 	char *f = malloc(128 * sizeof(char));
 	for (int i = 1; i < strlen(file); i++){
 		temp[i-1] = file[i];
 	}
-	free(file);
 	strcat(f, cwd);
 	strcat(f, temp);
-	
-	printf("%s\n", f);
-    int i;
-
-    
-
+	int i;
 	int result;
 	result=system(f);
+	if (result != 0){
+		printf("Error, unable to run the file %s\n", file);
+	}
 	free(temp);
+	free(file);
 	free(f);
-	printf("%d\n", result);
 	return 1;
 }
 
@@ -1863,7 +1859,7 @@ void resetArguments() {
                 strcpy(commandTable.comArgs[i], "");
 		strcpy(commandTable.input[i], "");
 		strcpy(commandTable.output[i], "");
-        }
+	}
 	strcpy(commandTable.output[1], "");
 	commandTable.in = 0;
 	commandTable.out = 0;
@@ -1913,49 +1909,36 @@ void getPATHS(char** paths) {
         char *str = malloc(128 * sizeof(char));
         strcpy(str, varTable.word[3]);
 
-	char *slash = malloc(128 * sizeof(char));
-        strcpy(slash, "/");
-        char *comm = malloc(128 * sizeof(char));
-        strcpy(comm, commandTable.command[0]);
-
-        //printf("%s%s\n", slash, comm);
-	//strcat(str, slash);
-
         int init_size = strlen(str);
         char delim[] = ":";
 
         char *ptr = strtok(str, delim);
-	//strcat(ptr, slash);
-	//strcat(ptr, comm);
 
         int pathCount = 0;
         while (ptr != NULL)
         {
                 paths[pathCount] = ptr;
-				printf("The PATH!!!    %s\n", paths[pathCount]);
                 pathCount++;
 		ptr = strtok(NULL, delim);
 	}
 }
 
 void fixPATHS(char** paths) {
-	char *slash = malloc(128 * sizeof(char));
-	strcpy(slash, "/");
-	char *comm = malloc(128 * sizeof(char));
-	strcpy(comm, commandTable.command[0]);
+char *str = malloc(128 * sizeof(char));
+        strcpy(str, commandTable.pathsTemp[0]);
 
-	printf("%s%s\n", slash, comm);
+        int init_size = strlen(str);
+        char delim[] = ":";
 
-	for(int i = 0; paths[i] != NULL; i++) {
-		char *temp = malloc(128*sizeof(char));
-		strcpy(temp, paths[i]);
-		printf("Temp: %s", temp);
-		strcat(temp, slash);
-		strcat(temp, comm);
-		strcpy(paths[i], temp);
-		free(temp);
-		printf("%s\n", paths[i]);
-	}
+        char *ptr = strtok(str, delim);
+
+        int pathCount = 0;
+        while (ptr != NULL)
+        {
+                paths[pathCount] = ptr;
+                pathCount++;
+                ptr = strtok(NULL, delim);
+        }
 }
 
 int yyerror(char *s) {
@@ -2076,10 +2059,6 @@ int runUnsetEnv(char *var) {
 }
 
 int runCD(char* arg) {
-	printf("ch with arg %s\n", arg);
-	//printf("%s\n", getcwd(cwd, sizeof(cwd)));
-	//chdir(arg);
-	//printf("%s\n", getcwd(cwd, sizeof(cwd)));
 
 	if (arg[0] != '/') { // arg is relative path
 		
@@ -2089,12 +2068,10 @@ int runCD(char* arg) {
 		strcat(temp, arg);
 		
 		if(chdir(temp) == 0) {
-			strcat(varTable.word[0], "/");
-			strcat(varTable.word[0], arg);
-
+			getcwd(cwd, sizeof(cwd));
+			strcpy(varTable.word[0], cwd);
 			return 1;
-		}
-		else {
+		} else {
 			getcwd(cwd, sizeof(cwd));
 			strcpy(varTable.word[0], cwd);
 			printf("Directory not found\n");
@@ -2275,30 +2252,26 @@ int runRemoveAlias(char *name) {
 
 int runBasic(char *name) {
 
-        strcat(varTable.word[3], "/");
-        strcat(varTable.word[3], commandTable.command[0]);
         char ** paths = malloc(128 * sizeof(char*));
         getPATHS(paths);
-
-	/*
-	printf("Paths:\n");
+	
         for(int i = 0; paths[i] != NULL; i++) {
-                printf("%s\n", paths[i]);
-        }
-	*/
-	//fixPATHS(paths);
-	/*
-	printf("Paths:\n");
-	for(int i = 0; paths[i] != NULL; i++) {
-		
-		printf("%s\n", paths[i]);
+		strcpy(commandTable.pathsTemp[i], paths[i]);
+		strcat(commandTable.pathsTemp[i], "/");
+		strcat(commandTable.pathsTemp[i], commandTable.command[0]);
 	}
-	*/
+	
+	for(int i = 1; paths[i] != NULL; i++) {
+		strcat(commandTable.pathsTemp[0], ":");
+		strcat(commandTable.pathsTemp[0], commandTable.pathsTemp[i]);
+		strcpy(commandTable.pathsTemp[i], "");
+	}
+
+	fixPATHS(paths);
+	
         char* arg_list[argCount];
-	//printf("commandTable args: ");
 
         for(int i = 0; i < argCount; i++) {
-		//printf("%s ", commandTable.comArgs[i]);
                 arg_list[i] = commandTable.comArgs[i];
         }
         arg_list[argCount - 1] = NULL;
@@ -2404,7 +2377,6 @@ int runBasic(char *name) {
 	*/
 
         free(paths);
-        resetPATH();
         resetArguments();
         argCount = 0;
 	runInBackground = false;
