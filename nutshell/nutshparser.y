@@ -449,7 +449,27 @@ int runUnsetEnv(char *var) {
 }
 
 int runCD(char* arg) {
-
+	int l = 0;
+	char *temp = malloc(128 * sizeof(char));
+	DIR *d;
+	struct dirent *dir;
+	d = opendir(".");
+		if (d){
+			while ((dir = readdir(d)) != NULL){
+				if (wildCardHelper(dir->d_name, arg)){
+					if (l==0){
+						strcpy(temp, dir->d_name);
+						l++;
+					}else{
+						printf("Error, the wildcard matches to more than one file\n");
+						return 1;
+					}
+				}
+			}
+			strcpy(arg, temp);
+		}
+	free(temp);
+	
 	if (arg[0] != '/') { // arg is relative path
 		
 		char *temp = malloc(128 * sizeof(char));
