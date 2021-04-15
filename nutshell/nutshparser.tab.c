@@ -1412,7 +1412,7 @@ yyreduce:
 
   case 3:
 #line 75 "nutshparser.y"
-                                                { printf("oijef\n");runSetEnv((yyvsp[-2].string), (yyvsp[-1].string)); return 1;}
+                                                { runSetEnv((yyvsp[-2].string), (yyvsp[-1].string)); return 1;}
 #line 1417 "nutshparser.tab.c"
     break;
 

@@ -110,8 +110,8 @@ bye                         { return BYE; }
 setenv			    { Aexp = true; return SETENV; }
 printenv	            { return PRINTENV; }
 unsetenv		    { return UNSETENV; }
-cd		            { printf("cd\n"); return CD; }
-"~"                         { printf("tilde\n"); yylval.string = strdup(yytext); return TILDE; }
+cd		            { return CD; }
+"~"                         { yylval.string = strdup(yytext); return TILDE; }
 "unalias"                   { return UNALIAS; }
 "alias"		            { return ALIAS; }
 

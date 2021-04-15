@@ -1,8 +1,0 @@
-{
-	"name": "just some sample data",
-	"data": {
-		"nested": true,
-		"level": 2,
-		"arrays": null
-	}
-}

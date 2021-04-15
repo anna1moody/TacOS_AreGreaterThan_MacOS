@@ -83,7 +83,7 @@ cmd_line    :
 	| ALIAS END				{runPrintAlias(); return 1;}
 	| ALIAS meta args			{runPrintAlias(); return 1;}
 	| UNALIAS STRING END			{runRemoveAlias($2); return 1;}
-	| EXEC END				{printf("%s\n", $1); runExecutable($1); return 1;}
+	| EXEC END				{runExecutable($1); return 1;}
 	| command args                          {addArguments("null"); fixArguments(); runBasic($1); return 1;} // Regular command, NO PIPES
 	| command pipe				{addArguments("null"); fixArguments(); fixArguments_pipes(); runPipe(); return 1;}	// Reinclude fixArguments_pipes();	
 	;
@@ -367,7 +367,7 @@ int runExecutable(char *file) {
 	strcat(f, temp);
 	int i;
 	int result;
-	result=system(f);
+	printf("Error, our nutshell doesn't have this capability\n");
 	
 	free(temp);
 	free(file);
@@ -632,7 +632,6 @@ int runSetEnv(char *var, char *word) {
 	
 }
 
-//wondering if that i should be varIndex
 int runPrintEnv() {
 	/*
 	if(commandTable.output[0] != "") {
