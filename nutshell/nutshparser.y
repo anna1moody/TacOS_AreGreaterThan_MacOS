@@ -19,6 +19,7 @@
 void resetPATH();
 void getPATHS(char** paths);
 void fixPATHS(char** paths);
+void fixPATHSpipes(char*** paths, int i);
 
 int yylex(void);
 int yyerror(char *s);
@@ -38,13 +39,17 @@ bool wildCardHelper(char* curFile, char* arg);
 int runExecutable(char *file);
 
 int argCount = 0;
+int pipingArgCount = 0;
 int inputCounter = 0;
 int outputCounter = 0;
+int pipeCount = 0;
+int pipeIndex = 0; // First index of triple char array
 
 void fixComTable(char *name);
 void addArguments(char *arg);
 void resetArguments();
 void fixArguments();
+void fixArguments_pipes();
 void fixIO(char *arg);
 
 void stderror(char *arg);
@@ -80,28 +85,24 @@ cmd_line    :
 	| UNALIAS STRING END			{runRemoveAlias($2); return 1;}
 	| EXEC END				{printf("%s\n", $1); runExecutable($1); return 1;}
 	| command args                          {addArguments("null"); fixArguments(); runBasic($1); return 1;} // Regular command, NO PIPES
-	| command pipe				{addArguments("null"); fixArguments(); runPipe(); return 1;}		
+	| command pipe				{addArguments("null"); fixArguments(); fixArguments_pipes(); runPipe(); return 1;}	// Reinclude fixArguments_pipes();	
 	;
-/*
-basic:
-        BASIC                                   {$$ = $1; fixComTable($1); addArguments($1);}
-        ;
-*/
 
 command:
-	STRING					{$$ = $1; fixComTable($1); addArguments($1);}
+	STRING					{$$ = $1; fixComTable($1); addArguments($1); fixArguments();}
 	;
 
 args:
         STRING args                             {$$ = $1; addArguments($1); fixIO($1);}
-        | meta args
+	| meta args
 	| err args								
 	| END					{fixIO($1);}
         ;
 
 pipe:
-	PIPE command				//{runPipe();}
-	| PIPE command args
+	| STRING pipe				{$$ = $1; addArguments($1);} // Arguments for pipes
+	| PIPE STRING pipe			{fixComTable($2); addArguments($2); addArguments($1); pipeCount++;}
+	| END					
 	;
 
 meta:
@@ -118,12 +119,128 @@ err:
 %%
 
 int runPipe() {
+	printf("Pipe Count: %d\n", pipeCount);
 	printf("Command Table:\n");
 	for(int i = 0; i < bcIndex; i++) {
 		printf("%s\n", commandTable.command[i]);
 	}
+	printf("Command Arguments:\n");
+	for(int i = 0; i < argCount; i++) {
+		printf("%s\n", commandTable.comArgs[i]); //pipingInput[i][j];
+	}
+
+	int pipe_count = 0; // Increments when | is hit; controls pipingInput array
+	pipingArgCount = 0;
+	for(int i = 0; i < argCount; i++) {
+		if(strcmp(commandTable.comArgs[i], "NULL") == 0) { // end of commands; may need to fix for IO redirection (if applicable)
+			strcpy(commandTable.pipingInput[pipe_count][pipingArgCount], commandTable.comArgs[i]);
+			pipingArgCount++;
+			printf("Inputting Array %d arg count: %d\n", pipe_count, pipingArgCount);
+			commandTable.pipingArgCount[pipe_count] = pipingArgCount;
+		} else if(strcmp(commandTable.comArgs[i], "|") == 0) { // Add NULL to end of each array
+			strcpy(commandTable.pipingInput[pipe_count][pipingArgCount], "NULL");
+			pipingArgCount++;
+			printf("Inputting Array %d arg count: %d\n", pipe_count, pipingArgCount);
+			commandTable.pipingArgCount[pipe_count] = pipingArgCount;
+			pipe_count++;
+			pipingArgCount = 0;
+		} else {
+			strcpy(commandTable.pipingInput[pipe_count][pipingArgCount], commandTable.comArgs[i]);
+			pipingArgCount++;			
+		}
+	}
+
+	printf("Now testing triple char array...\n");
+	for(int i = 0; i < bcIndex; i++) {
+		printf("Array %d:\n", i);
+		for(int j = 0; j < commandTable.pipingArgCount[i]; j++) {
+			printf("%s\n", commandTable.pipingInput[i][j]);
+		}
+	}
+
+	// Now onto getting the correct paths situated...
+	char ** paths = malloc(128 * sizeof(char*));
+        getPATHS(paths);
+
+	for(int i = 0; i < bcIndex; i++) {
+                for(int j = 0; paths[j] != NULL; j++) {
+                        strcpy(commandTable.pipingPaths[i][j], paths[j]);
+                        strcat(commandTable.pipingPaths[i][j], "/");
+                        strcat(commandTable.pipingPaths[i][j], commandTable.command[i]);
+                }
+        }
+	printf("Printing piping paths:\n");
+	for(int i = 0; i < bcIndex; i++) {
+                //printf("Path set %d:\n", i);
+                for(int j = 0; paths[j] != NULL; j++) {
+                        printf("%s\n", commandTable.pipingPaths[i][j]);
+                }
+        }
+
+	printf("Printing appended paths:\n");
+	for(int i = 0; i < bcIndex; i++) {
+		for(int j = 1; paths[j] != NULL; j++) {
+			strcat(commandTable.pipingPaths[i][0], ":");
+			strcat(commandTable.pipingPaths[i][0], commandTable.pipingPaths[i][j]);
+			strcpy(commandTable.pipingPaths[i][j], "");
+		}
+		printf("%s\n", commandTable.pipingPaths[i][0]);
+	}
+
+	// Memory allocation...
+	char *** pipedPaths = (char***)malloc(100 * sizeof(char**));
+	for(int i = 0; i < 100; i++) {
+		pipedPaths[i] = (char**)malloc(128 * sizeof(char*));
+		for(int j = 0; j < 128; j++) {
+			pipedPaths[i][j] = "";
+			/*pipedPaths[i][j] = (char*)malloc(100 * sizeof(char));
+			for(int k = 0; k < 100; k++) {
+				pipedPaths[i][j][k] = "";
+			}
+			*/
+		}
+	}
+
+
+
+	for(int i = 0; i < bcIndex; i++) {
+		fixPATHSpipes(pipedPaths, i);
+	}
+
+	printf("pipedPaths is a go?\n");
+	for(int i = 0; i < bcIndex; i++) {
+		for(int j = 0; j < 2; j++) {
+			printf("%s\n", pipedPaths[i][j]);
+		}
+	}
+
+
+
+
+	// BIG BOY TESTING...
+	pid_t pid = fork();
+        if (pid < 0) {
+                exit(1);
+        } else if (pid == 0) {
+
+                exit(0);
+        }
+	wait(NULL);
+
+
+
+
+
+
+
+
+
+	free(paths);
+	free(pipedPaths);	
 	resetArguments();
 	argCount = 0;
+	pipingArgCount = 0;
+	pipeCount = 0;
 	return 1;
 }
 
@@ -243,6 +360,20 @@ void fixArguments() {
         }
 }
 
+void fixArguments_pipes() {
+        if(bcIndex == 0 || bcIndex == 1) {
+                return;
+        } else {
+		int j = bcIndex - 1;
+                for(int i = 1; i < j; i++) {
+                        strcpy(commandTable.temp[0], commandTable.command[i]);
+                        strcpy(commandTable.command[i], commandTable.command[j]);
+                        strcpy(commandTable.command[j], commandTable.temp[0]);
+                        j--;
+                }
+        }
+}
+
 void resetArguments() {
         for(int i = 0; i < argCount; i++) {
                 strcpy(commandTable.command[i], "");
@@ -250,7 +381,19 @@ void resetArguments() {
 		strcpy(commandTable.input[i], "");
 		strcpy(commandTable.output[i], "");
 	}
+	
+	for(int i = 0; i < bcIndex; i++) {
+		for(int j = 0; j < commandTable.pipingArgCount[i]; j++) {
+			strcpy(commandTable.pipingInput[i][j], ""); 
+		}
+	}
+	
+	for(int i = 0; i < bcIndex; i++) {
+		commandTable.pipingArgCount[i] = 0;
+	}
+
 	strcpy(commandTable.output[1], "");
+	strcpy(commandTable.piping[0], "");
 	commandTable.in = 0;
 	commandTable.out = 0;
 	commandTable.isDouble = 0;
@@ -315,7 +458,7 @@ void getPATHS(char** paths) {
 }
 
 void fixPATHS(char** paths) {
-char *str = malloc(128 * sizeof(char));
+	char *str = malloc(128 * sizeof(char));
         strcpy(str, commandTable.pathsTemp[0]);
 
         int init_size = strlen(str);
@@ -327,6 +470,24 @@ char *str = malloc(128 * sizeof(char));
         while (ptr != NULL)
         {
                 paths[pathCount] = ptr;
+                pathCount++;
+                ptr = strtok(NULL, delim);
+        }
+}
+
+void fixPATHSpipes(char*** paths, int i) {
+        char *str = malloc(128 * sizeof(char));
+        strcpy(str, commandTable.pipingPaths[i][0]);
+
+        int init_size = strlen(str);
+        char delim[] = ":";
+
+        char *ptr = strtok(str, delim);
+
+        int pathCount = 0;
+        while (ptr != NULL)
+        {
+                paths[i][pathCount] = ptr;
                 pathCount++;
                 ptr = strtok(NULL, delim);
         }

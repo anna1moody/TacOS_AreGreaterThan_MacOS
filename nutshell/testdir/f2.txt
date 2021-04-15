@@ -1,3 +1,6 @@
 apple
-carrot
 banana
+carrot
+apple
+banana
+carrot

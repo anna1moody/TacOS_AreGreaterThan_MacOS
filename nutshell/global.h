@@ -21,6 +21,11 @@ struct bcTable {
         char patternArgs[128][100];
 	char pathsTemp[128][100];
 
+	char pipingInput[100][128][100];
+	char piping[128][100];
+	int pipingArgCount[128];
+	char pipingPaths[100][128][100];
+
         bool in, out, isDouble, isErr, stderr_stdoutput;
 };
 
