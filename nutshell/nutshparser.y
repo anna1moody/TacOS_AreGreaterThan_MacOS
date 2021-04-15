@@ -67,7 +67,7 @@ void stderr_stdout();
 %%
 cmd_line    :
 	BYE END			                {exit(1); return 1;}
-	| SETENV STRING	STRING END		{ printf("oijef\n");runSetEnv($2, $3); return 1;}
+	| SETENV STRING	STRING END		{ runSetEnv($2, $3); return 1;}
 	| PRINTENV END				{runPrintEnv(); return 1;}
 	| PRINTENV meta args			{runPrintEnv(); return 1;}
 	| UNSETENV STRING END			{runUnsetEnv($2); return 1;}
