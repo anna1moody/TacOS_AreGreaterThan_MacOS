@@ -19,7 +19,6 @@
 void resetPATH();
 void getPATHS(char** paths);
 void fixPATHS(char** paths);
-void fixPATHSpipes(char*** paths, int i);
 
 int yylex(void);
 int yyerror(char *s);
@@ -163,192 +162,13 @@ int runPipe() {
         getPATHS(paths);
 
 	for(int i = 0; i < bcIndex; i++) {
-                for(int j = 0; paths[j] != NULL; j++) {
-                        strcpy(commandTable.pipingPaths[i][j], paths[j]);
-                        strcat(commandTable.pipingPaths[i][j], "/");
-                        strcat(commandTable.pipingPaths[i][j], commandTable.command[i]);
-                }
-        }
-	printf("Printing piping paths:\n");
-	for(int i = 0; i < bcIndex; i++) {
-                //printf("Path set %d:\n", i);
-                for(int j = 0; paths[j] != NULL; j++) {
-                        printf("%s\n", commandTable.pipingPaths[i][j]);
-                }
-        }
-
-	printf("Printing appended paths:\n");
-	for(int i = 0; i < bcIndex; i++) {
-		for(int j = 1; paths[j] != NULL; j++) {
-			strcat(commandTable.pipingPaths[i][0], ":");
-			strcat(commandTable.pipingPaths[i][0], commandTable.pipingPaths[i][j]);
-			strcpy(commandTable.pipingPaths[i][j], "");
-		}
-		printf("%s\n", commandTable.pipingPaths[i][0]);
-	}
-
-	// Memory allocation...
-	char *** pipedPaths = (char***)malloc(100 * sizeof(char**));
-	for(int i = 0; i < 100; i++) {
-		pipedPaths[i] = (char**)malloc(128 * sizeof(char*));
-		for(int j = 0; j < 128; j++) {
-			pipedPaths[i][j] = "";
+		for(int j = 0; paths[j] != NULL; i++) {
+			strcpy(commandTable.pipingPaths[i][j], paths[j]);
+			strcat(commandTable.pipingPaths[i][j], "/");
+			strcat(commandTable.pipingPaths[i][j], commandTable.command[i]);
 		}
 	}
 
-	for(int i = 0; i < bcIndex; i++) {
-		fixPATHSpipes(pipedPaths, i);
-	}
-
-	printf("pipedPaths is a go?\n");
-	for(int i = 0; i < bcIndex; i++) {
-		for(int j = 0; paths[j] != NULL; j++) {
-			printf("%s\n", pipedPaths[i][j]);
-		}
-	}
-
-	/*
-	// Adjusting the piping input
-	//char* arg_list[128][100];
-	for(int i = 0; i < bcIndex; i++) {
-		char* arg_list[bcIndex][commandTable.pipingArgCount[i]];
-	}
-
-	for(int i = 0; i < bcIndex; i++) {
-		int argsCount = 0;
-		for(int j = 0; commandTable.pipingInput[i][j] != NULL; j++) {
-			arg_list[i][j] = commandTable.pipingInput[i][j];
-			argsCount++;
-		}
-		arg_list[i][argsCount - 1] = NULL;
-	}
-
-	printf("Now printing piping input...\n");
-	for(int i = 0; i < bcIndex; i++) {
-		printf("Printing Array %d:\n", i);
-		for(int j = 0; commandTable.pipingInput[i][j] != NULL; j++) {
-			printf("%s\n", arg_list[i][j]);
-		}
-	}
-	*/
-	
-	// BIG BOY TESTING...
-
-	pid_t pid;
-	int pipefds[2*pipe_count];
-	int status;
-	// Creating the pipes
-	for(int i = 0; i < pipe_count; i++) {
-		if(pipe(pipefds + i*2) < 0) {
-			perror("Error: could not make pipes");
-			exit(1);
-		}
-	}
-
-	int commandCount = 0;
-	while(strcmp(commandTable.command[commandCount], "") != 0) { // Does all the commands
-		pid = fork();
-		if(pid < 0) {
-			exit(1);
-		} else if (pid == 0) {
-			// Situate PATHS
-			int numPaths = 0;
-			for(int i = 0; paths[i] != NULL; i++) {
-				paths[i] = pipedPaths[commandCount][i];
-				numPaths++;
-			}
-			printf("Paths for Array %d\n", commandCount);
-			for(int i = 0; paths[i] != NULL; i++) {
-				printf("%s\n", paths[i]);
-			}
-	
-			// Situate Arguments
-			int argCount = commandTable.pipingArgCount[commandCount];
-			char* arg_list[argCount];
-			for(int i = 0; i < argCount; i++) {
-				arg_list[i] = commandTable.pipingInput[commandCount][i];
-			}
-			arg_list[argCount - 1] = NULL;
-
-			printf("Arguments for Array %d\n", commandCount);
-			for(int i = 0; i < argCount - 1; i++) {
-				printf("%s\n", arg_list[i]);
-			}
-
-			// I/O redirection would happen here if first command
-
-			// Gets input from previous command if not first command
-			if(strcmp(arg_list[0], commandTable.command[commandCount]) != 0) { // Checks for first command
-				if(dup2(pipefds[(commandCount - 1) * 2], STDIN_FILENO) < 0) {
-					perror("dup2 in failure");
-					exit(1);
-				}
-			}
-
-			// Child outputs to the next command if its not the last command
-			if(strcmp(arg_list[0], commandTable.command[bcIndex - 1]) != 0) { // Checks for last command
-				if(dup2(pipefds[(commandCount * 2) + 1], STDOUT_FILENO) < 0) {
-					perror("dup2 out failure");
-					exit(1);
-				}
-			}
-			
-			// Close pipes
-			for(int i = 0; i < pipe_count * 2; i++){
-				close(pipefds[i]);
-			}
-			
-			// Error testing
-			printf("Number of Paths: %d\n", numPaths);
-			bool didRun = false;
-			bool runCount[numPaths];			
-			int errvalue;
-
-			for(int i = 0; i < numPaths; i++) {
-				printf("Now executing: %s\n", paths[i]);
-				execv(paths[i], arg_list);
-				//errvalue = errno;
-				//runCount[i] = errvalue;
-
-				perror("Could not run command");
-				printf("%s\n", paths[i]);
-				runCount[i] = errno;
-				exit(EXIT_FAILURE);
-			}
-
-			for(int i = 0; i < numPaths; i++) {
-				if(runCount[i] == 0) {
-					didRun = true;
-				}
-			}
-			if(!didRun) {
-				printf("The error generated was %d\n", EXIT_FAILURE);
-				printf("That means: %s\n", strerror(EXIT_FAILURE));
-				commandTable.isErr = 1;
-			}
-			
-			exit(0);
-		}
-		wait(NULL);
-		commandCount++;	
-	}
-
-	for(int i = 0; i < pipe_count * 2; i++) {
-		close(pipefds[i]);
-	}
-
-	for(int i = 0; i < pipe_count + 1; i++) {
-		wait(&status);
-	}
-	/*
-	if (!runInBackground){
-                runInBackground = false;
-		wait(NULL);
-        }
-	*/
-
-	free(paths);
-	free(pipedPaths);	
 	resetArguments();
 	argCount = 0;
 	pipingArgCount = 0;
@@ -496,7 +316,8 @@ void resetArguments() {
 	
 	for(int i = 0; i < bcIndex; i++) {
 		for(int j = 0; j < commandTable.pipingArgCount[i]; j++) {
-			strcpy(commandTable.pipingInput[i][j], ""); 
+			strcpy(commandTable.pipingInput[i][j], "");
+			strcpy(commandTable.pipingPaths[i][j], "");
 		}
 	}
 	
@@ -570,7 +391,7 @@ void getPATHS(char** paths) {
 }
 
 void fixPATHS(char** paths) {
-	char *str = malloc(128 * sizeof(char));
+char *str = malloc(128 * sizeof(char));
         strcpy(str, commandTable.pathsTemp[0]);
 
         int init_size = strlen(str);
@@ -582,24 +403,6 @@ void fixPATHS(char** paths) {
         while (ptr != NULL)
         {
                 paths[pathCount] = ptr;
-                pathCount++;
-                ptr = strtok(NULL, delim);
-        }
-}
-
-void fixPATHSpipes(char*** paths, int i) {
-        char *str = malloc(128 * sizeof(char));
-        strcpy(str, commandTable.pipingPaths[i][0]);
-
-        int init_size = strlen(str);
-        char delim[] = ":";
-
-        char *ptr = strtok(str, delim);
-
-        int pathCount = 0;
-        while (ptr != NULL)
-        {
-                paths[i][pathCount] = ptr;
                 pathCount++;
                 ptr = strtok(NULL, delim);
         }
@@ -938,10 +741,9 @@ int runBasic(char *name) {
                 arg_list[i] = commandTable.comArgs[i];
         }
         arg_list[argCount - 1] = NULL;
-
 	//printf("\n");
 	// Testing for arguments
-	for(int i = 0; i < argCount - 1; i++) {
+	for(int i = 0; i < argCount-1; i++) {
 		printf("%s\n", arg_list[i]);
 	}
 	
@@ -1022,6 +824,23 @@ int runBasic(char *name) {
 		runInBackground = false;
 		wait(NULL);
 	}
+
+	//Error testing
+	//for(int i = 0; sizePaths; i++) {
+	//	printf("%d\n", runCount[i]);
+	//}
+	/*	
+	for(int i = 0; i < sizePaths; i++) {
+		if(runCount[i] == 0) {
+	                didRun = true;
+                }
+        }
+        if(!didRun) {
+                printf("The error generated was %d\n", 2);
+                printf("That means: %s\n", strerror(2));
+		commandTable.isErr = 1;
+        }
+	*/
 
         free(paths);
         resetArguments();
