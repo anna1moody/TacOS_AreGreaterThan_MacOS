@@ -60,6 +60,12 @@ int main()
     strcpy(commandTable.input[bcIndex], "");
     strcpy(commandTable.output[bcIndex], "");
     strcpy(commandTable.pathsTemp[bcIndex], "");
+
+    strcpy(commandTable.pipingInput[bcIndex][bcIndex], "");
+    strcpy(commandTable.pipingPaths[bcIndex][bcIndex], "");
+    strcpy(commandTable.piping[bcIndex], "");
+    commandTable.pipingArgCount[0] = 0;
+
     commandTable.in = 0;
     commandTable.out = 0;
     commandTable.isDouble = 0;
