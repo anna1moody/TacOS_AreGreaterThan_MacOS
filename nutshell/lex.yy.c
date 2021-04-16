@@ -1023,12 +1023,12 @@ YY_RULE_SETUP
 case 14:
 YY_RULE_SETUP
 #line 113 "nutshscanner.l"
-{ printf("cd\n"); return CD; }
+{ return CD; }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
 #line 114 "nutshscanner.l"
-{ printf("tilde\n"); yylval.string = strdup(yytext); return TILDE; }
+{ yylval.string = strdup(yytext); return TILDE; }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP

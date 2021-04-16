@@ -1478,7 +1478,7 @@ yyreduce:
 
   case 14:
 #line 86 "nutshparser.y"
-                                                {printf("%s\n", (yyvsp[-1].string)); runExecutable((yyvsp[-1].string)); return 1;}
+                                                {runExecutable((yyvsp[-1].string)); return 1;}
 #line 1483 "nutshparser.tab.c"
     break;
 
@@ -2039,7 +2039,7 @@ int runExecutable(char *file) {
 	strcat(f, temp);
 	int i;
 	int result;
-	result=system(f);
+	printf("Error, our nutshell doesn't have this capability\n");
 	
 	free(temp);
 	free(file);
@@ -2304,7 +2304,6 @@ int runSetEnv(char *var, char *word) {
 	
 }
 
-//wondering if that i should be varIndex
 int runPrintEnv() {
 	/*
 	if(commandTable.output[0] != "") {
