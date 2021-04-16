@@ -57,9 +57,8 @@ void deleteEdge(struct Graph* graph, struct node* n1, struct node* n2) {
     }
 }
 
-bool isCyclicUtil(struct Graph* graph, int vertex, bool visited[], bool recStack[])
+bool isCyclicUtil(struct Graph* graph, int vertex, bool* visited[], bool* recStack[])
 {
-
     if (recStack[vertex]) {
         return true;
     }
@@ -81,9 +80,8 @@ bool isCyclicUtil(struct Graph* graph, int vertex, bool visited[], bool recStack
 // This function is a variation of DFS() in https://www.geeksforgeeks.org/archives/18212
 bool isCyclic(struct Graph* graph)
 {
-
-    bool visited[nodeIndex];
-    bool recStack[nodeIndex];
+    bool* visited[nodeIndex];
+    bool* recStack[nodeIndex];
     for (int i = 0; i < nodeIndex; i++)
     {
         visited[i] = false;

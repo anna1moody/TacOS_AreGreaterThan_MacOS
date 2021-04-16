@@ -72,9 +72,9 @@ void stderr_stdout();
 %%
 cmd_line    :
 	BYE END			                {exit(1); return 1;}
-	| SETENV STRING	STRING END		{ runSetEnv($2, $3); return 1;}
+	| SETENV STRING	STRING END		{runSetEnv($2, $3); return 1;}
 	| PRINTENV END				{runPrintEnv(); return 1;}
-	| PRINTENV meta args			{runPrintEnv(); return 1;}
+	| PRINTENV meta STRING END		{fixIO($3); runPrintEnv(); return 1;}
 	| UNSETENV STRING END			{runUnsetEnv($2); return 1;}
 	| CD END				{runCDn(); return 1;}
 	| CD TILDE END				{runCD($2); return 1;}
@@ -83,7 +83,7 @@ cmd_line    :
 	| ALIAS END				{runPrintAlias(); return 1;}
 	| ALIAS meta args			{runPrintAlias(); return 1;}
 	| UNALIAS STRING END			{runRemoveAlias($2); return 1;}
-	| EXEC END				{runExecutable($1); return 1;}
+	| EXEC END				{printf("%s\n", $1); runExecutable($1); return 1;}
 	| command args                          {addArguments("null"); fixArguments(); runBasic($1); return 1;} // Regular command, NO PIPES
 	| command pipe				{addArguments("null"); fixArguments(); fixArguments_pipes(); runPipe(); return 1;}	// Reinclude fixArguments_pipes();	
 	;
@@ -96,11 +96,11 @@ args:
         STRING args                             {$$ = $1; addArguments($1); fixIO($1);}
 	| meta args
 	| err args								
-	| END					{fixIO($1);}
+	| END					
         ;
 
 pipe:
-	| STRING pipe				{$$ = $1; addArguments($1);} // Arguments for pipes
+	STRING pipe				{$$ = $1; addArguments($1);} // Arguments for pipes
 	| PIPE STRING pipe			{fixComTable($2); addArguments($2); addArguments($1); pipeCount++;}
 	| END					
 	;
@@ -119,7 +119,8 @@ err:
 %%
 
 int runPipe() {
-	printf("Pipe Count: %d\n", pipeCount);
+	//printf("Pipe Count: %d\n", pipeCount);
+	/*
 	printf("Command Table:\n");
 	for(int i = 0; i < bcIndex; i++) {
 		printf("%s\n", commandTable.command[i]);
@@ -128,19 +129,19 @@ int runPipe() {
 	for(int i = 0; i < argCount; i++) {
 		printf("%s\n", commandTable.comArgs[i]); //pipingInput[i][j];
 	}
-
+	*/
 	int pipe_count = 0; // Increments when | is hit; controls pipingInput array
 	pipingArgCount = 0;
 	for(int i = 0; i < argCount; i++) {
 		if(strcmp(commandTable.comArgs[i], "NULL") == 0) { // end of commands; may need to fix for IO redirection (if applicable)
 			strcpy(commandTable.pipingInput[pipe_count][pipingArgCount], commandTable.comArgs[i]);
 			pipingArgCount++;
-			printf("Inputting Array %d arg count: %d\n", pipe_count, pipingArgCount);
+			//printf("Inputting Array %d arg count: %d\n", pipe_count, pipingArgCount);
 			commandTable.pipingArgCount[pipe_count] = pipingArgCount;
 		} else if(strcmp(commandTable.comArgs[i], "|") == 0) { // Add NULL to end of each array
 			strcpy(commandTable.pipingInput[pipe_count][pipingArgCount], "NULL");
 			pipingArgCount++;
-			printf("Inputting Array %d arg count: %d\n", pipe_count, pipingArgCount);
+			//printf("Inputting Array %d arg count: %d\n", pipe_count, pipingArgCount);
 			commandTable.pipingArgCount[pipe_count] = pipingArgCount;
 			pipe_count++;
 			pipingArgCount = 0;
@@ -149,7 +150,7 @@ int runPipe() {
 			pipingArgCount++;			
 		}
 	}
-
+	/*
 	printf("Now testing triple char array...\n");
 	for(int i = 0; i < bcIndex; i++) {
 		printf("Array %d:\n", i);
@@ -157,7 +158,7 @@ int runPipe() {
 			printf("%s\n", commandTable.pipingInput[i][j]);
 		}
 	}
-
+	*/
 	// Now onto getting the correct paths situated...
 	char ** paths = malloc(128 * sizeof(char*));
         getPATHS(paths);
@@ -169,22 +170,23 @@ int runPipe() {
                         strcat(commandTable.pipingPaths[i][j], commandTable.command[i]);
                 }
         }
+	/*
 	printf("Printing piping paths:\n");
 	for(int i = 0; i < bcIndex; i++) {
-                //printf("Path set %d:\n", i);
+                printf("Path set %d:\n", i);
                 for(int j = 0; paths[j] != NULL; j++) {
                         printf("%s\n", commandTable.pipingPaths[i][j]);
                 }
         }
-
-	printf("Printing appended paths:\n");
+	*/
+	//printf("Printing appended paths:\n");
 	for(int i = 0; i < bcIndex; i++) {
 		for(int j = 1; paths[j] != NULL; j++) {
 			strcat(commandTable.pipingPaths[i][0], ":");
 			strcat(commandTable.pipingPaths[i][0], commandTable.pipingPaths[i][j]);
 			strcpy(commandTable.pipingPaths[i][j], "");
 		}
-		printf("%s\n", commandTable.pipingPaths[i][0]);
+		//printf("%s\n", commandTable.pipingPaths[i][0]);
 	}
 
 	// Memory allocation...
@@ -199,153 +201,146 @@ int runPipe() {
 	for(int i = 0; i < bcIndex; i++) {
 		fixPATHSpipes(pipedPaths, i);
 	}
-
+	/*	
 	printf("pipedPaths is a go?\n");
 	for(int i = 0; i < bcIndex; i++) {
 		for(int j = 0; paths[j] != NULL; j++) {
 			printf("%s\n", pipedPaths[i][j]);
 		}
 	}
-
-	/*
-	// Adjusting the piping input
-	//char* arg_list[128][100];
-	for(int i = 0; i < bcIndex; i++) {
-		char* arg_list[bcIndex][commandTable.pipingArgCount[i]];
-	}
-
-	for(int i = 0; i < bcIndex; i++) {
-		int argsCount = 0;
-		for(int j = 0; commandTable.pipingInput[i][j] != NULL; j++) {
-			arg_list[i][j] = commandTable.pipingInput[i][j];
-			argsCount++;
-		}
-		arg_list[i][argsCount - 1] = NULL;
-	}
-
-	printf("Now printing piping input...\n");
-	for(int i = 0; i < bcIndex; i++) {
-		printf("Printing Array %d:\n", i);
-		for(int j = 0; commandTable.pipingInput[i][j] != NULL; j++) {
-			printf("%s\n", arg_list[i][j]);
-		}
-	}
 	*/
 	
+	printf("bcIndex = %d\n", bcIndex);
+
 	// BIG BOY TESTING...
 
 	pid_t pid;
-	int pipefds[2*pipe_count];
-	int status;
-	// Creating the pipes
-	for(int i = 0; i < pipe_count; i++) {
-		if(pipe(pipefds + i*2) < 0) {
-			perror("Error: could not make pipes");
-			exit(1);
-		}
-	}
+        int pipefds[2 * pipe_count];
+        int status;
+        // Creating the pipes
+        for(int i = 0; i < pipe_count; i++) {
+                if(pipe(pipefds + i*2) < 0) {
+                        perror("Error: could not make pipes");
+                        exit(1);
+                }
+        }
 
 	int commandCount = 0;
-	while(strcmp(commandTable.command[commandCount], "") != 0) { // Does all the commands
-		pid = fork();
-		if(pid < 0) {
-			exit(1);
-		} else if (pid == 0) {
-			// Situate PATHS
-			int numPaths = 0;
-			for(int i = 0; paths[i] != NULL; i++) {
-				paths[i] = pipedPaths[commandCount][i];
-				numPaths++;
-			}
+        while(strcmp(commandTable.command[commandCount], "") != 0) { // Does all the commands
+                pid = fork();
+                if(pid < 0) {
+                        exit(1);
+                } else if (pid == 0) {
+                        // Situate PATHS
+                        int numPaths = 0;
+                        for(int i = 0; paths[i] != NULL; i++) {
+                                paths[i] = pipedPaths[commandCount][i];
+                                numPaths++;
+                        }
+                        /*
 			printf("Paths for Array %d\n", commandCount);
-			for(int i = 0; paths[i] != NULL; i++) {
-				printf("%s\n", paths[i]);
-			}
-	
-			// Situate Arguments
-			int argCount = commandTable.pipingArgCount[commandCount];
-			char* arg_list[argCount];
-			for(int i = 0; i < argCount; i++) {
-				arg_list[i] = commandTable.pipingInput[commandCount][i];
-			}
-			arg_list[argCount - 1] = NULL;
+                        for(int i = 0; paths[i] != NULL; i++) {
+                                printf("%s\n", paths[i]);
+                        }
+			*/
+                        // Situate Arguments
+                        int argCount = commandTable.pipingArgCount[commandCount];
+                        char* arg_list[argCount];
+                        for(int i = 0; i < argCount; i++) {
+                                arg_list[i] = commandTable.pipingInput[commandCount][i];
+                        }
+                        arg_list[argCount - 1] = NULL;
+			/*
+                        printf("Arguments for Array %d\n", commandCount);
+                        for(int i = 0; i < argCount - 1; i++) {
+                                printf("%s\n", arg_list[i]);
+                        }
+			*/
+                        // I/O redirection would happen here if first command
 
-			printf("Arguments for Array %d\n", commandCount);
-			for(int i = 0; i < argCount - 1; i++) {
-				printf("%s\n", arg_list[i]);
+                        int tempin = dup(STDIN_FILENO);
+                        int tempout = dup(STDOUT_FILENO);
+
+                        // Gets input from previous command if not first command
+                        if(strcmp(arg_list[0], commandTable.command[commandCount]) != 0) { // Checks for first command
+                                if(dup2(pipefds[(commandCount * 2)], pipefds[(commandCount * 2) + 1]) < 0) { // if(dup2(pipefds[(commandCount - 1) * 2], STDIN_FILENO < 0)
+                                        perror("dup2 input failure");
+                                        exit(1);
+                                }
+                        } else { // Is first command
+				dup2(pipefds[commandCount], STDIN_FILENO);
 			}
 
-			// I/O redirection would happen here if first command
-
-			// Gets input from previous command if not first command
-			if(strcmp(arg_list[0], commandTable.command[commandCount]) != 0) { // Checks for first command
-				if(dup2(pipefds[(commandCount - 1) * 2], STDIN_FILENO) < 0) {
-					perror("dup2 in failure");
-					exit(1);
-				}
+                        // Child outputs to the next command if its not the last command
+                        if(strcmp(arg_list[0], commandTable.command[bcIndex - 1]) != 0) { // Checks for last command
+                                if(dup2(pipefds[(commandCount * 2) + 1], pipefds[(commandCount * 2)]) < 0) { // if(dup2(pipefds[(commandCount * 2) + 1], STDOUT_FILENO
+                                        perror("dup2 output failure");
+                                        exit(1);
+                                }
+                        } else { // Is last command
+				dup2(pipefds[(commandCount * 2) + 1], STDOUT_FILENO);
 			}
 
-			// Child outputs to the next command if its not the last command
-			if(strcmp(arg_list[0], commandTable.command[bcIndex - 1]) != 0) { // Checks for last command
-				if(dup2(pipefds[(commandCount * 2) + 1], STDOUT_FILENO) < 0) {
-					perror("dup2 out failure");
-					exit(1);
-				}
-			}
+                        
+                        for(int i = 0; i < pipe_count * 2; i++){
+                                close(pipefds[i]);
+                        }
+                        
+
+                        // Error testing
+                        //printf("Number of Paths: %d\n", numPaths);
+                        bool didRun = false;
+                        bool runCount[numPaths];
+                        int errvalue;
+
+                        for(int i = 0; i < numPaths; i++) {
+                                //printf("Now executing: %s\n", paths[i]);
+                                execv(paths[i], arg_list);
+                                runCount[i] = errvalue;
+
+                                //perror("Could not run command");
+                                //printf("%s\n", paths[i]);
+                                runCount[i] = errno;
+                                //exit(EXIT_FAILURE);
+                        }
+
+                        for(int i = 0; i < numPaths; i++) {
+                                if(runCount[i] == 0) {
+                                        didRun = true;
+                                }
+                        }
+                        if(!didRun) {
+                                printf("The error generated was %d\n", EXIT_FAILURE);
+                                printf("That means: %s\n", strerror(EXIT_FAILURE));
+                                commandTable.isErr = 1;
+                        }
 			
-			// Close pipes
-			for(int i = 0; i < pipe_count * 2; i++){
-				close(pipefds[i]);
-			}
+			close(tempin);
+			close(tempout);
 			
-			// Error testing
-			printf("Number of Paths: %d\n", numPaths);
-			bool didRun = false;
-			bool runCount[numPaths];			
-			int errvalue;
-
-			for(int i = 0; i < numPaths; i++) {
-				printf("Now executing: %s\n", paths[i]);
-				execv(paths[i], arg_list);
-				//errvalue = errno;
-				//runCount[i] = errvalue;
-
-				perror("Could not run command");
-				printf("%s\n", paths[i]);
-				runCount[i] = errno;
-				exit(EXIT_FAILURE);
-			}
-
-			for(int i = 0; i < numPaths; i++) {
-				if(runCount[i] == 0) {
-					didRun = true;
-				}
-			}
-			if(!didRun) {
-				printf("The error generated was %d\n", EXIT_FAILURE);
-				printf("That means: %s\n", strerror(EXIT_FAILURE));
-				commandTable.isErr = 1;
-			}
-			
-			exit(0);
-		}
-		wait(NULL);
-		commandCount++;	
-	}
-
-	for(int i = 0; i < pipe_count * 2; i++) {
-		close(pipefds[i]);
-	}
-
-	for(int i = 0; i < pipe_count + 1; i++) {
-		wait(&status);
-	}
-	/*
-	if (!runInBackground){
-                runInBackground = false;
-		wait(NULL);
+                        exit(0);
+                }
+                wait(&status);
+                commandCount++;
         }
-	*/
+
+        for(int i = 0; i < pipe_count * 2; i++) {
+                close(pipefds[i]);
+        }
+
+        for(int i = 0; i < pipe_count + 1; i++) {
+                wait(&status);
+        }
+        /*
+        if (!runInBackground){
+                runInBackground = false;
+                wait(NULL);
+        }
+        */
+
+
+////////////////////////////////////FAILED ATTEMPT/////////////////////////////////////
+
 
 	free(paths);
 	free(pipedPaths);	
@@ -367,7 +362,7 @@ int runExecutable(char *file) {
 	strcat(f, temp);
 	int i;
 	int result;
-	printf("Error, our nutshell doesn't have this capability\n");
+	result=system(f);
 	
 	free(temp);
 	free(file);
@@ -503,7 +498,7 @@ void resetArguments() {
 	for(int i = 0; i < bcIndex; i++) {
 		commandTable.pipingArgCount[i] = 0;
 	}
-
+	strcpy(commandTable.input[0], "");
 	strcpy(commandTable.output[1], "");
 	strcpy(commandTable.piping[0], "");
 	commandTable.in = 0;
@@ -632,6 +627,7 @@ int runSetEnv(char *var, char *word) {
 	
 }
 
+//wondering if that i should be varIndex
 int runPrintEnv() {
 	/*
 	if(commandTable.output[0] != "") {
@@ -940,15 +936,16 @@ int runBasic(char *name) {
 
 	//printf("\n");
 	// Testing for arguments
+	/*
 	for(int i = 0; i < argCount - 1; i++) {
 		printf("%s\n", arg_list[i]);
 	}
-	
+	*/
 	// Testing for I/O redirection
 	//printf("Input: %d\n", commandTable.in);
 	//printf("Output: %d\n", commandTable.out);
 	//printf("error->output: %d\n", commandTable.stderr_stdoutput);
-	
+	/*
 	printf("Input:\n");
 	for(int i = 0; i < inputIndex; i++) {
                 printf("%s\n", commandTable.input[i]);
@@ -958,7 +955,7 @@ int runBasic(char *name) {
 		printf("%s\n", commandTable.output[i]);
 	}
 	printf("Command executing...\n");
-
+	*/
 	int errvalue;
 	int sizePaths = sizeof paths / sizeof paths[0];
 	bool didRun;
@@ -969,14 +966,14 @@ int runBasic(char *name) {
                 exit(1);
         } else if (pid == 0) {
                 if(commandTable.input[0] != "") { // Checks for directing input
-			int fd0 = open(commandTable.input[0], O_RDONLY, O_APPEND); //fix input
+			int fd0 = open(commandTable.input[0], O_RDONLY | O_APPEND); //fix input
 			dup2(fd0, STDIN_FILENO);
 			close(fd0);
 		}
 
 		if(commandTable.output[0] != "") { // Checks for directing output
 			if(!commandTable.isDouble) {
-				int fd1 = open(commandTable.output[0], O_WRONLY); //fix output
+				int fd1 = open(commandTable.output[0], O_WRONLY | O_TRUNC); //fix output
 				dup2(fd1, STDOUT_FILENO);
 				close(fd1);
 			} else if (commandTable.isDouble) {
